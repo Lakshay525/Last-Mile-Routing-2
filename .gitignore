@@ -1,0 +1,11 @@
+@'
+Dataset/
+.cache/
+.pytest_cache/
+*.pkl
+*.pt
+.ipynb_checkpoints/
+__pycache__/
+*.egg-info/
+.venv/
+'@ | Set-Content -Encoding utf8 .gitignore

@@ -1,0 +1,11 @@
+{
+  "methods": "nn,sa,lns,lns_static,zone_sa,zone_lns",
+  "n_routes": 200,
+  "seed": 0,
+  "gnn": null,
+  "split": "test",
+  "out": "results/exp01_classical.csv",
+  "commit": "",
+  "date": "2026-10-21",
+  "n_routes_evaluated": 45
+}
