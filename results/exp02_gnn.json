@@ -1,0 +1,11 @@
+{
+  "methods": "driver,nn,sa,lns,gnn,gnn_sa,gnn_lns",
+  "n_routes": 300,
+  "seed": 0,
+  "gnn": "results/gnn_v2.pt",
+  "split": "test",
+  "out": "results/exp02_gnn.csv",
+  "commit": "2fac398",
+  "date": "2026-10-22",
+  "n_routes_evaluated": 62
+}
