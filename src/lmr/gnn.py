@@ -1,6 +1,8 @@
 import copy, random
 import numpy as np
 import torch, torch.nn as nn, torch.nn.functional as F
+from scipy.stats import kendalltau
+
 
 def featurize(r):
     n = len(r.T); eye = np.eye(n, dtype=bool); Tn = r.T / r.T[~eye].mean()
@@ -16,12 +18,14 @@ def featurize(r):
     t = lambda a: torch.tensor(a, dtype=torch.float32)[None]
     return t(x), t(e), t(Tn)
 
+
 class EdgeGATv2(nn.Module):
     def __init__(s, d, de, heads=4):
         super().__init__(); s.h, s.dk = heads, d // heads
         s.Wl, s.Wr = nn.Linear(d, d, bias=False), nn.Linear(d, d, bias=False)
         s.We = nn.Linear(de, d, bias=False); s.a = nn.Parameter(torch.randn(heads, s.dk) * 0.1)
         s.out, s.norm, s.drop = nn.Linear(d, d), nn.LayerNorm(d), nn.Dropout(0.1)
+
     def forward(s, h, e):
         B, n, d = h.shape
         l = s.Wl(h).view(B, n, 1, s.h, s.dk); r = s.Wr(h).view(B, 1, n, s.h, s.dk)
@@ -30,11 +34,13 @@ class EdgeGATv2(nn.Module):
         m = (att * r).sum(2).reshape(B, n, d)
         return s.norm(h + s.drop(F.elu(s.out(m))))
 
+
 class PtrDecoder(nn.Module):
     def __init__(s, d):
         super().__init__(); s.d = d; s.gru = nn.GRUCell(2 * d, d)
         s.Wq, s.Wk = nn.Linear(d, d, bias=False), nn.Linear(d, d, bias=False)
         s.beta = nn.Parameter(torch.tensor(1.0))
+
     def forward(s, H, Tn, mode="sample", target=None):
         B, n, d = H.shape; ar = torch.arange(B); hg = H.mean(1); k = s.Wk(H)
         state, cur = hg.clone(), torch.zeros(B, dtype=torch.long)
@@ -50,53 +56,94 @@ class PtrDecoder(nn.Module):
             seq.append(nxt); cur = nxt
         return torch.stack(seq, 1), logp
 
+
 class Policy(nn.Module):
     def __init__(s, fin=11, d=64, layers=3):
         super().__init__(); s.inp = nn.Linear(fin, d)
         s.gnn = nn.ModuleList(EdgeGATv2(d, 3) for _ in range(layers)); s.dec = PtrDecoder(d)
+
     def forward(s, x, e, Tn, mode="sample", target=None):
         h = s.inp(x)
         for l in s.gnn: h = l(h, e)
         return s.dec(h, Tn, mode, target)
 
+
 def tour_cost(Tn, seq):
     b = torch.arange(len(seq))[:, None]; return Tn[b, seq[:, :-1], seq[:, 1:]].sum(1)
 
-def train(routes, val_routes, epochs=20, lr=1e-4, bs=8, imitation_epochs=3):
-    """Imitation warm-up (copy the driver), then REINFORCE with a greedy-rollout baseline.
-    Returns (policy, history)."""
-    pol = Policy(); base = copy.deepcopy(pol).eval(); opt = torch.optim.Adam(pol.parameters(), lr)
+
+def train(routes, val_routes, epochs=20, lr=1e-4, bs=8, imitation_epochs=3,
+          n_samples=8, rl_lr=2e-5, patience=3):
+    """Phase 1 (imitation): copy the driver's next stop.
+    Phase 2 (REINFORCE): K sampled tours per instance, baseline = their mean, advantage normalised.
+    Each epoch logs validation route cost AND similarity to the driver.
+    The returned model is the end-of-imitation model, or a later one if RL beats its cost.
+    Early stopping only counts during the RL phase. Returns (policy, history)."""
+    from .solvers import nearest_neighbour
+    pol = Policy(); opt = torch.optim.Adam(pol.parameters(), lr)
     data = [featurize(r) for r in routes]; val = [featurize(r) for r in val_routes]
-    history = []
+
+    # reference points in the same units
+    nn_c = np.mean([tour_cost(Tn, torch.tensor([nearest_neighbour(Tn[0].numpy())])).item() for _, _, Tn in val])
+    drv_c = np.mean([tour_cost(Tn, torch.arange(Tn.shape[1])[None]).item() for _, _, Tn in val])
+    print(f"reference on val: nearest-neighbour {nn_c:.2f}  driver {drv_c:.2f}")
+
+    history, best, best_state, bad = [], float("inf"), None, 0
     for ep in range(epochs):
         random.shuffle(data); pol.train()
+        if ep == imitation_epochs:                      # gentler learning rate for the RL phase
+            for g in opt.param_groups: g["lr"] = rl_lr
         for i in range(0, len(data), bs):
             loss = 0
             for x, e, Tn in data[i:i + bs]:
                 if ep < imitation_epochs:
                     tgt = torch.arange(x.shape[1])[None]; _, lp = pol(x, e, Tn, target=tgt); loss = loss - lp.mean()
                 else:
-                    seq, lp = pol(x, e, Tn, "sample")
-                    with torch.no_grad(): bseq, _ = base(x, e, Tn, "greedy")
-                    loss = loss + ((tour_cost(Tn, seq) - tour_cost(Tn, bseq)).detach() * lp).mean()
+                    X, E, TN = (x.expand(n_samples, -1, -1), e.expand(n_samples, -1, -1, -1),
+                                Tn.expand(n_samples, -1, -1))
+                    seq, lp = pol(X, E, TN, "sample")
+                    c = tour_cost(TN, seq)
+                    adv = ((c - c.mean()) / (c.std() + 1e-8)).detach()
+                    loss = loss + (adv * lp).mean()
             opt.zero_grad(); (loss / bs).backward()
             nn.utils.clip_grad_norm_(pol.parameters(), 1.0); opt.step()
+
         pol.eval()
         with torch.no_grad():
-            pc = float(np.mean([tour_cost(Tn, pol(x, e, Tn, "greedy")[0]).item() for x, e, Tn in val]))
-            bc = float(np.mean([tour_cost(Tn, base(x, e, Tn, "greedy")[0]).item() for x, e, Tn in val]))
-        if pc < bc: base.load_state_dict(pol.state_dict())
-        history.append(dict(epoch=ep, val_policy=pc, val_baseline=bc))
-        print(f"epoch {ep}  val greedy cost  policy {pc:.2f}  baseline {bc:.2f}")
+            outs = [pol(x, e, Tn, "greedy")[0][0] for x, e, Tn in val]
+        pc = float(np.mean([tour_cost(Tn, o[None]).item() for (x, e, Tn), o in zip(val, outs)]))
+        sim = float(np.mean([kendalltau(np.argsort(o.numpy()), np.arange(len(o)))[0] for o in outs]))
+        history.append(dict(epoch=ep, val_policy=pc, val_sim=sim, nn_ref=float(nn_c), driver_ref=float(drv_c)))
+
+        if ep < imitation_epochs - 1:
+            pass                                        # still imitating: no selection, no stopping
+        elif ep == imitation_epochs - 1:                # end of imitation = the starting point to beat
+            best, best_state, bad = pc, copy.deepcopy(pol.state_dict()), 0
+        elif pc < best:
+            best, best_state, bad = pc, copy.deepcopy(pol.state_dict()), 0
+        else:
+            bad += 1
+        print(f"epoch {ep}  val cost {pc:.2f}  val similarity {sim:.3f}  (best {best:.2f})")
+        if ep >= imitation_epochs and bad >= patience:
+            print(f"early stop: no improvement for {patience} epochs"); break
+
+    if best_state is None:                              # fewer epochs than imitation_epochs
+        best_state = copy.deepcopy(pol.state_dict())
+    pol.load_state_dict(best_state)
     return pol, history
+
 
 def gnn_route(pol, r):
     x, e, Tn = featurize(r)
     with torch.no_grad(): return pol(x, e, Tn, "greedy")[0][0].tolist()
 
+
 def save_model(pol, path): torch.save(pol.state_dict(), path)
+
+
 def load_model(path):
     pol = Policy(); pol.load_state_dict(torch.load(path)); return pol.eval()
+
 
 def gnn_solvers(pol):
     from .solvers import simulated_annealing, lns

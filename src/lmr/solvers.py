@@ -106,6 +106,7 @@ def zone_wise(T, zone, solver, **kw):
 # ---------------- registry: name -> fn(route) -> sequence ----------------
 SOLVERS = {
     "nn":         lambda r: nearest_neighbour(r.T),
+    "driver":     lambda r: list(range(len(r.T))),
     "sa":         lambda r: simulated_annealing(r.T, iters=config.SA_ITERS)[0],
     "lns":        lambda r: lns(r.T, r.zone, iters=config.LNS_ITERS)[0],
     "lns_static": lambda r: lns(r.T, r.zone, iters=config.LNS_ITERS, adaptive=False)[0],   # ablation

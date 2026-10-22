@@ -2,6 +2,18 @@ import time
 import numpy as np, pandas as pd
 from scipy.stats import kendalltau
 
+def zone_order(zone, p):
+    seen = []
+    for i in p[1:]:
+        if zone[i] not in seen: seen.append(zone[i])
+    return seen
+
+def zone_order_similarity(r, p):
+    """Kendall tau between the order zones are first visited by p and by the driver."""
+    drv, mine = zone_order(r.zone, r.actual), zone_order(r.zone, p)
+    pos = {z: i for i, z in enumerate(mine)}
+    return kendalltau(range(len(drv)), [pos[z] for z in drv])[0]
+
 def cost(T, p):
     """Open path from the station (index 0), no return leg, as in the challenge."""
     p = np.asarray(p); return T[p[:-1], p[1:]].sum()

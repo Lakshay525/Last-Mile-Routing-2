@@ -1,11 +1,11 @@
 {
-  "methods": "nn,sa,lns,lns_static,zone_sa,zone_lns",
-  "n_routes": 200,
+  "methods": "driver,nn,sa,lns,zone_sa,zone_lns",
+  "n_routes": 1000,
   "seed": 0,
   "gnn": null,
   "split": "test",
   "out": "results/exp01_classical.csv",
-  "commit": "",
-  "date": "2026-10-21",
-  "n_routes_evaluated": 45
+  "commit": "163b7ec",
+  "date": "2026-10-22",
+  "n_routes_evaluated": 207
 }
