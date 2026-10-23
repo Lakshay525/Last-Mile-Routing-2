@@ -26,6 +26,22 @@ def similarity(p):
     pos = np.empty(len(p), int); pos[p] = np.arange(len(p))
     return kendalltau(pos, np.arange(len(p)))[0]
 
+def route_metrics(r, p):
+    """All per-route metrics for a proposed visiting order p (list of stop indices, depot first).
+    travel_time is in seconds from the travel-time matrix. zone_blocks_per_zone is (zone changes + 1) / zones:
+    1.0 means every zone is visited in a single block. The penalised objective at any lambda is
+    travel_time + lambda * zone_sw (up to a constant), so it can be computed afterwards from these columns."""
+    p = list(map(int, p))
+    assert sorted(p) == list(range(len(r.T))) and p[0] == 0, "invalid route"
+    c = cost(r.T, p); base = cost(r.T, r.actual); nz = len(r.zone_names); zsw = zone_switches(r.zone, p)
+    from .packages import time_metrics
+    return dict(route=r.rid, station=r.station, score=r.score, n=len(p), n_zones=nz,
+                travel_time=c, driver_time=base, gap_vs_driver=c / base - 1,
+                zone_sw=zsw, zone_blocks_per_zone=(zsw + 1) / nz,
+                sim_to_driver=similarity(p), zone_order_sim=zone_order_similarity(r, p),
+                **time_metrics(r, p))
+
+
 def run_experiment(routes, methods):
     """methods: {name: fn(route) -> sequence}. One row per (route, method)."""
     rows = []

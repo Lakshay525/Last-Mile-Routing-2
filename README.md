@@ -1,5 +1,12 @@
 # Last-mile routing: SA vs LNS, zone-wise vs whole-route, and GNN warm starts
 
+> **Branch `zone-lns` (new work):** plain LNS and zone-specific LNS (GNN-predicted zone order, overlapping zone windows),
+> zone-crossing penalty, OR-Tools baseline, service-time / time-window metrics.
+> Method definitions and mathematics: [docs/METHODS.md](docs/METHODS.md). Results with every number traced to a CSV:
+> [docs/RESULTS.md](docs/RESULTS.md). Run anything with `python scripts/run_specs.py --out results/x.csv <method specs>`
+> (spec syntax in `src/lmr/methods.py`). LKH3 and the financial-cost metric are not included yet.
+
+
 Deakin University research project on the last-mile routing problem, using the Amazon Last Mile Routing
 Research Challenge 2021 data (Los Angeles, Seattle, Boston, Austin and Chicago stations; training set of 6,112 routes).
 

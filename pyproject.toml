@@ -6,6 +6,7 @@ dependencies = ["numpy", "pandas", "scipy", "matplotlib", "ijson"]
 
 [project.optional-dependencies]
 gnn = ["torch"]
+baselines = ["ortools"]
 dev = ["pytest", "ipykernel"]
 
 [build-system]

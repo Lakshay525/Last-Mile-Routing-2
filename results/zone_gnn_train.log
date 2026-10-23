@@ -1,0 +1,30 @@
+D:\Deakin University\last-mile-routing-v2\src\lmr\zone_gnn.py:78: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:821.)
+  torch.nn.utils.clip_grad_norm_(pol.parameters(), 1.0); opt.step(); tot += float(loss)
+zone-order GNN: 1815 train routes, 598 val routes, 207 test routes
+epoch  0  train NLL/step 1.799  val zone-order tau +0.018
+epoch  1  train NLL/step 1.511  val zone-order tau +0.037
+epoch  2  train NLL/step 1.357  val zone-order tau +0.023
+epoch  3  train NLL/step 1.276  val zone-order tau +0.041
+epoch  4  train NLL/step 1.218  val zone-order tau +0.039
+epoch  5  train NLL/step 1.183  val zone-order tau +0.039
+epoch  6  train NLL/step 1.147  val zone-order tau +0.030
+epoch  7  train NLL/step 1.121  val zone-order tau +0.032
+epoch  8  train NLL/step 1.098  val zone-order tau +0.057
+epoch  9  train NLL/step 1.076  val zone-order tau +0.038
+epoch 10  train NLL/step 1.064  val zone-order tau +0.042
+epoch 11  train NLL/step 1.043  val zone-order tau +0.044
+epoch 12  train NLL/step 1.033  val zone-order tau +0.048
+epoch 13  train NLL/step 1.022  val zone-order tau +0.050
+epoch 14  train NLL/step 1.009  val zone-order tau +0.075
+epoch 15  train NLL/step 0.989  val zone-order tau +0.088
+epoch 16  train NLL/step 0.982  val zone-order tau +0.047
+epoch 17  train NLL/step 0.976  val zone-order tau +0.023
+epoch 18  train NLL/step 0.962  val zone-order tau +0.037
+epoch 19  train NLL/step 0.957  val zone-order tau +0.043
+epoch 20  train NLL/step 0.942  val zone-order tau +0.059
+epoch 21  train NLL/step 0.941  val zone-order tau +0.056
+test zone-order tau vs driver  gnn                          mean +0.063  median +0.145
+test zone-order tau vs driver  greedy (nearest zone next)   mean -0.034  median -0.095
+test zone-order tau vs driver  ztsp (zone-level routing)    mean -0.033  median -0.116
+test zone-order tau vs driver  random                       mean +0.014  median +0.014

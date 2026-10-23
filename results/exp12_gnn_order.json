@@ -1,0 +1,26 @@
+{
+  "specs": [
+    "zlns:order=gnn:w=2:l=0",
+    "zlns:order=gnn:w=3:l=0",
+    "zlns:order=gnn:w=2:l=15",
+    "zlns:order=gnn:w=3:l=15",
+    "zlns:order=gnn:w=2:l=30",
+    "zlns:order=gnn:w=3:l=30",
+    "zlns:order=gnn:w=2:l=60",
+    "zlns:order=gnn:w=3:l=60",
+    "zlns:order=gnn:w=2:l=120",
+    "zlns:order=gnn:w=3:l=120"
+  ],
+  "n_routes": 1000,
+  "limit": null,
+  "split": "test",
+  "workers": 10,
+  "zone_model": "results/zone_gnn.pt",
+  "seed": 0,
+  "no_packages": false,
+  "out": "results/exp12_gnn_order.csv",
+  "commit": "0457210",
+  "date": "2026-10-24",
+  "n_routes_evaluated": 207,
+  "wall_seconds": 313
+}

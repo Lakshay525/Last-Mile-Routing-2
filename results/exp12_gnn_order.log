@@ -1,0 +1,24 @@
+  207/2070 tasks  (34s)
+  414/2070 tasks  (63s)
+  621/2070 tasks  (90s)
+  828/2070 tasks  (118s)
+  1035/2070 tasks  (147s)
+  1242/2070 tasks  (176s)
+  1449/2070 tasks  (207s)
+  1656/2070 tasks  (240s)
+  1863/2070 tasks  (277s)
+  2070/2070 tasks  (313s)
+                          gap_vs_driver  zone_sw  ...  zone_order_sim   secs
+method                                            ...                       
+zlns:order=gnn:w=2:l=0           -0.055   27.483  ...           0.062  1.471
+zlns:order=gnn:w=2:l=120         -0.033   19.937  ...           0.064  1.468
+zlns:order=gnn:w=2:l=15          -0.052   23.807  ...           0.062  1.484
+zlns:order=gnn:w=2:l=30          -0.047   22.126  ...           0.063  1.470
+zlns:order=gnn:w=2:l=60          -0.040   20.662  ...           0.064  1.476
+zlns:order=gnn:w=3:l=0           -0.072   30.227  ...           0.061  1.478
+zlns:order=gnn:w=3:l=120         -0.041   20.121  ...           0.066  1.477
+zlns:order=gnn:w=3:l=15          -0.068   25.633  ...           0.064  1.476
+zlns:order=gnn:w=3:l=30          -0.060   23.213  ...           0.064  1.478
+zlns:order=gnn:w=3:l=60          -0.051   21.164  ...           0.065  1.480
+
+[10 rows x 5 columns]

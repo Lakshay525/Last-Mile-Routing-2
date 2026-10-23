@@ -1,0 +1,18 @@
+  62/621 tasks  (39s)
+  124/621 tasks  (74s)
+  186/621 tasks  (112s)
+  248/621 tasks  (146s)
+  310/621 tasks  (182s)
+  372/621 tasks  (213s)
+  434/621 tasks  (240s)
+  496/621 tasks  (269s)
+  558/621 tasks  (305s)
+  620/621 tasks  (338s)
+  621/621 tasks  (338s)
+                      gap_vs_driver  zone_sw  ...  zone_order_sim   secs
+method                                        ...                       
+lns:i=1500:l=60:mu=5         -0.096   22.986  ...          -0.001  5.356
+lns:i=1500:mu=1              -0.116   35.990  ...           0.009  5.356
+lns:i=1500:mu=5              -0.115   36.024  ...          -0.001  5.342
+
+[3 rows x 5 columns]

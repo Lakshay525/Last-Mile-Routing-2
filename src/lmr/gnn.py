@@ -58,9 +58,9 @@ class PtrDecoder(nn.Module):
 
 
 class Policy(nn.Module):
-    def __init__(s, fin=11, d=64, layers=3):
+    def __init__(s, fin=11, d=64, layers=3, de=3):
         super().__init__(); s.inp = nn.Linear(fin, d)
-        s.gnn = nn.ModuleList(EdgeGATv2(d, 3) for _ in range(layers)); s.dec = PtrDecoder(d)
+        s.gnn = nn.ModuleList(EdgeGATv2(d, de) for _ in range(layers)); s.dec = PtrDecoder(d)
 
     def forward(s, x, e, Tn, mode="sample", target=None):
         h = s.inp(x)

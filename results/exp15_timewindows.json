@@ -1,0 +1,19 @@
+{
+  "specs": [
+    "lns:i=1500:mu=1",
+    "lns:i=1500:mu=5",
+    "lns:i=1500:l=60:mu=5"
+  ],
+  "n_routes": 1000,
+  "limit": null,
+  "split": "test",
+  "workers": 10,
+  "zone_model": null,
+  "seed": 0,
+  "no_packages": false,
+  "out": "results/exp15_timewindows.csv",
+  "commit": "0457210",
+  "date": "2026-10-24",
+  "n_routes_evaluated": 207,
+  "wall_seconds": 338
+}
