@@ -28,3 +28,10 @@ epoch 25  train NLL/step 0.798  val acc +0.761
 epoch 26  train NLL/step 0.793  val acc +0.762
 epoch 27  train NLL/step 0.791  val acc +0.763
 epoch 28  train NLL/step 0.785  val acc +0.764
+epoch 29  train NLL/step 0.781  val acc +0.763
+test zone-order tau vs driver  gnn (greedy decoding)        mean +0.093  median +0.156
+test zone-order tau vs driver  gnn (beam 20)                mean +0.071  median +0.117
+test zone-order tau vs driver  greedy (nearest zone next)   mean -0.030  median -0.077
+test zone-order tau vs driver  ztsp (zone-level routing)    mean -0.037  median -0.105
+test zone-order tau vs driver  reference route (no learning) mean +0.626  median +0.750
+test zone-order tau vs driver  random                       mean -0.002  median +0.005

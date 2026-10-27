@@ -28,7 +28,7 @@ as the depot's zone; they now take the zone of the nearest stop, as in the LKH-A
 3. **Zonal methods (approaches 1 and 3) are far faster and still beat OR-Tools on travel time when the zone order is chosen by zone-level routing:** −11.29% (0.91 ± 0.37 points better than OR-Tools 10 s) in 0.15 s (zonal LNS) or 0.72 s (zonal SA), clean timings (T1, T6, T8). **SA and LNS give the same result inside the zonal pipeline** (difference 0.02 ± 0.08).
 4. **Zonal methods cost travel time against global LNS (2.52 ± 0.32 points for zone-level routing order) but produce routes much closer to the drivers' when the zone order comes from data.** With the zone order of the best-matching training route, the challenge's official score falls from 0.058 (plain LNS) and 0.064 (OR-Tools) to 0.035 at the balanced setting λ = 60 (differences −0.023 ± 0.004 and −0.029 ± 0.004, better on 80% and 89% of routes), at a cost of 3.57 ± 0.39 points of travel time against plain LNS (T2, T6).
 5. **The zone order is the key ingredient.** The driver's own zone order (an oracle, not deployable) gives similarity 0.94 and official score 0.009; the data-derived orders reach 0.60 and 0.033–0.035; orders from geometry alone (nearest zone, zone-level routing) give ≈ 0 similarity (T2, T7).
-6. **A GNN adds nothing measurable over copying the best reference route.** With the reference route's order as input the GNN predicts the driver's zone order as well as the reference does (Kendall τ +0.624 vs +0.626 on average, median 0.872 vs 0.750), and the routes it yields score the same (difference −0.0021 ± 0.0023, T6, T7). Without that input the GNN's validation next-zone accuracy is lower (about 76% against 82% with the reference features; the test comparison with and without is in T7 when `zone_gnn_geom.json` exists).
+6. **A GNN adds nothing measurable over copying the best reference route.** With the reference route's order as input the GNN predicts the driver's zone order as well as the reference does (Kendall τ +0.624 vs +0.626 on average, median 0.872 vs 0.750), and the routes it yields score the same (difference −0.0021 ± 0.0023, T6, T7). Without that input (geometry and travel times only) the GNN is far weaker: validation next-zone accuracy 76% against 82%, and test τ +0.093 with greedy decoding and +0.071 with beam search (T7), against +0.57 and +0.62 with the reference features. Beam search helped the model with reference features (+0.572 → +0.624) but not the geometry-only one.
 7. **The balance of time and driver-likeness is tunable, and the best frontier comes from combining a data-derived zone order with the soft order penalty ρ and a global refinement (T3, T4, `figures/score_vs_time.png`).** At about the same travel time (−12.7% for ρ = 30 s against −12.9% for plain LNS with λ = 30 s) its official score is 0.048 against 0.064; at ρ = 100 s it reaches −9.7% travel time with score 0.037, where plain LNS with the zone penalty needs λ = 120 s (−10.6%) to get down to 0.054.
 8. **Time windows:** unconstrained methods have many more late stops than the driver (0.66 vs 0.18 per route in our own timeline), and a lateness penalty removes almost all of them (0.02) for 0.32 ± 0.12 points of travel time (T5). This metric could not be validated against the literature (section 6).
 9. **The savings are modest in the context of a whole route.** Travel time is 40% of a route (10,923 s of 27,393 s per route; service time is the same for every method). Plain LNS saves 1,466 s of travel (5.4% of the driver's route duration); after waiting for time windows to open, in our timeline, the net saving is 914 s (3.4%).
@@ -75,7 +75,7 @@ The paper reports 647 time-window violations for the driver tours (0.58 per rout
 ## 8. Feasibility and limits
 
 * Computationally feasible: 0.15 s (zonal LNS) to 2 s (plain LNS) per route on a laptop CPU; OR-Tools needs 10 s for a worse result.
-* The reference-route zone order needs historical routes from the same depot (here 3,691 training routes); for a new depot no reference exists, and a GNN that sees only geometry and travel times has lower validation accuracy and is not a substitute.
+* The reference-route zone order needs historical routes from the same depot (here 3,691 training routes); for a new depot no reference exists, and a GNN that sees only geometry and travel times predicts the zone order poorly (τ +0.07 to +0.09) and is not a substitute.
 * All gains are measured on the travel-time matrix, which holds estimates (no parking, construction or real traffic), and on a route-level metric that omits service time (the same for all methods). Whether drivers would accept routes that differ from theirs is not tested; the official score is only a proxy for that.
 * The numbers come from one seed and 207 routes; intervals cover route variation, not run-to-run variation. OR-Tools results varied between two runs by 0.4 points at 10 s and 1.5 points at 2 s.
 
@@ -198,6 +198,8 @@ Official score, paired (negative = first method scores better):
 | ztsp (zone-level routing) | -0.037 | -0.105 | 0.608 |
 | reference route (no learning) | 0.626 | 0.750 | 0.398 |
 | random | -0.002 | 0.005 | 0.161 |
+| GNN geometry only: gnn (greedy decoding) | 0.093 | 0.156 | 0.676 |
+| GNN geometry only: gnn (beam 20) | 0.071 | 0.117 | 0.718 |
 
 ## Comparison with the literature: 1107 High+Delivered routes (paper: 1,107)
 
