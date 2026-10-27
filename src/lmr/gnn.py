@@ -45,16 +45,39 @@ class PtrDecoder(nn.Module):
         B, n, d = H.shape; ar = torch.arange(B); hg = H.mean(1); k = s.Wk(H)
         state, cur = hg.clone(), torch.zeros(B, dtype=torch.long)
         visited = torch.zeros(B, n, dtype=torch.bool); visited[:, 0] = True
-        seq, logp = [cur], 0
+        seq, logp, hits = [cur], 0, []
         for t in range(n - 1):
             state = s.gru(torch.cat([H[ar, cur], hg], -1), state)
             u = 10 * torch.tanh((s.Wq(state)[:, None] * k).sum(-1) / d ** 0.5) - s.beta * Tn[ar, cur]
             lp = u.masked_fill(visited, float("-inf")).log_softmax(-1)
             nxt = target[:, t + 1] if target is not None else (
                   lp.argmax(-1) if mode == "greedy" else torch.multinomial(lp.exp(), 1).squeeze(1))
+            if target is not None: hits.append(lp.argmax(-1) == nxt)
             logp = logp + lp[ar, nxt]; visited = visited.scatter(1, nxt[:, None], True)
             seq.append(nxt); cur = nxt
+        s.last_hits = torch.stack(hits, 1) if hits else None      # teacher-forced: was the model's top choice the target?
         return torch.stack(seq, 1), logp
+
+
+def _beam_decode(dec, H, Tn, width):
+    """Beam search over whole sequences for a PtrDecoder, batch size 1. Returns the sequence with the highest
+    total log-probability among `width` partial sequences kept at each step."""
+    B, n, d = H.shape; hg = H.mean(1); k = dec.Wk(H)
+    beams = [(0.0, [0], hg.clone(), torch.zeros(1, n, dtype=torch.bool))]
+    beams[0][3][0, 0] = True
+    for t in range(n - 1):
+        cand = []
+        for lp0, seq, state, visited in beams:
+            cur = seq[-1]
+            state = dec.gru(torch.cat([H[:, cur], hg], -1), state)
+            u = 10 * torch.tanh((dec.Wq(state)[:, None] * k).sum(-1) / d ** 0.5) - dec.beta * Tn[:, cur]
+            lp = u.masked_fill(visited, float("-inf")).log_softmax(-1)[0]
+            top = torch.topk(lp, min(width, int((~visited[0]).sum())))
+            for v, j in zip(top.values.tolist(), top.indices.tolist()):
+                nv = visited.clone(); nv[0, j] = True
+                cand.append((lp0 + v, seq + [j], state, nv))
+        cand.sort(key=lambda c: -c[0]); beams = cand[:width]
+    return beams[0][1], beams[0][0]
 
 
 class Policy(nn.Module):

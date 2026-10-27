@@ -1,0 +1,21 @@
+zone-order GNN: 3691 train routes, 1213 val routes, 207 test routes
+epoch  0  train NLL/step 1.648  val acc +0.625
+epoch  1  train NLL/step 1.307  val acc +0.654
+epoch  2  train NLL/step 1.192  val acc +0.651
+epoch  3  train NLL/step 1.128  val acc +0.672
+epoch  4  train NLL/step 1.087  val acc +0.683
+epoch  5  train NLL/step 1.059  val acc +0.689
+epoch  6  train NLL/step 1.033  val acc +0.700
+epoch  7  train NLL/step 1.006  val acc +0.709
+epoch  8  train NLL/step 0.980  val acc +0.713
+epoch  9  train NLL/step 0.969  val acc +0.721
+epoch 10  train NLL/step 0.950  val acc +0.724
+epoch 11  train NLL/step 0.935  val acc +0.730
+epoch 12  train NLL/step 0.925  val acc +0.731
+epoch 13  train NLL/step 0.915  val acc +0.727
+epoch 14  train NLL/step 0.904  val acc +0.735
+epoch 15  train NLL/step 0.896  val acc +0.736
+epoch 16  train NLL/step 0.888  val acc +0.738
+epoch 17  train NLL/step 0.880  val acc +0.742
+epoch 18  train NLL/step 0.875  val acc +0.743
+epoch 19  train NLL/step 0.869  val acc +0.742

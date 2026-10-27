@@ -1,0 +1,28 @@
+{
+  "specs": [
+    "driver",
+    "lns:i=1500",
+    "lns:i=2000:kmax=2",
+    "lns:i=5000:kmax=2",
+    "lns:i=15000:kmax=2",
+    "lns:i=5000:kmax=2:pol=1",
+    "lns:i=5000:kmax=2:l=15",
+    "lns:i=5000:kmax=2:l=30",
+    "lns:i=5000:kmax=2:l=60",
+    "lns:i=5000:kmax=2:l=120",
+    "lns:i=5000:kmax=2:mu=5",
+    "lns:i=5000:kmax=2:l=60:mu=5"
+  ],
+  "n_routes": 1000,
+  "limit": null,
+  "split": "test",
+  "workers": 6,
+  "zone_model": null,
+  "seed": 0,
+  "no_packages": false,
+  "out": "results/exp20_lns_tuned.csv",
+  "commit": "cbefa55",
+  "date": "2026-10-26",
+  "n_routes_evaluated": 207,
+  "wall_seconds": 1050
+}

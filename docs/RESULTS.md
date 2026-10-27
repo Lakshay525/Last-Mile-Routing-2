@@ -1,150 +1,245 @@
-# Results: plain LNS vs zone-specific LNS (GNN zone order, overlapping zones) vs OR-Tools
+# Results: three approaches against OR-Tools, and a comparison with the literature
 
-Branch `zone-lns`. Method definitions and formulas: `METHODS.md` (section numbers below refer to it).
-Every number here comes from a CSV in `results/` (file named in each table). Nothing is rounded in our favour.
+Branch `zone-lns`. Definitions and mathematics: [METHODS.md](METHODS.md). **Every table below is generated from the CSV files in
+`results/` by `scripts/make_tables.py`; no number was typed by hand.** Commands that reproduce each file: `scripts/run_final.sh`.
 
-**Setup.** 207 test routes (hash bucket 80–99 of a 1,000-route sample of the 6,112 training routes), ~149 stops and
-~20 zones per route. All methods use the same routes and seed 0. "Gap" = travel time relative to the real driver's
-route on the same route (−12% = 12% less travel time according to the travel-time matrix). Intervals are
-mean ± 1.96·SE over routes, so they show route-to-route variation only; **there is one random seed, so run-to-run
-variation of the stochastic methods is not included.**
+## 0. Read this first
 
-**Not done (and why).** LKH3: not installed, download not authorised. Financial cost: parameters not provided.
-Official challenge score: not implemented. Full dataset: 207 of 6,112 routes evaluated, evaluation folder unused.
-Solver parameters were not tuned.
+**The three approaches**
+1. **Approach 1, zonal LNS:** choose the order of the zones, solve each zone, then re-optimise overlapping windows of 3 zones with LNS (METHODS §4–5).
+2. **Approach 2, plain (global) LNS:** one LNS over the whole route (METHODS §3).
+3. **Approach 3, zonal SA** (the professor's suggestion): approach 1 with simulated annealing as the optimiser (METHODS §10). Global SA is reported as well.
+**Baseline to beat:** Google OR-Tools (guided local search). **Reference to approach:** LKH3 was not available, so the published optimal tours of the LKH-AMZ paper (Cook, Held & Helsgaun, 2022) are used as the reference point instead (section 4).
 
-## 0. What the main findings are
+**Setup.** 207 held-out test routes (about 149 stops and 20 zones each), one random seed, all methods on the same routes. "Travel time vs driver" is
+the open-path travel time from the travel-time matrix relative to the driver's route on the same route (−10% = 10% less). Intervals are mean ± 1.96·SE over routes (route
+variation only; one seed). Parameters of every method were chosen on **validation** routes (section 7), never on the test routes.
 
-1. **Plain LNS finds the shortest routes and beats OR-Tools.** −12.0% vs the driver at 1,500 iterations; OR-Tools (10 s) −10.8%. Paired difference −1.18 ± 0.27 points, LNS better on 76% of routes. Even 500 LNS iterations (0.4 s) beat OR-Tools at 10 s (−0.59 ± 0.27).
-2. **Zone-specific LNS does *not* beat plain LNS or OR-Tools on travel time.** Best variant (zone-level routing order, window of 3 zones) −9.2%; it is 1.65 ± 0.49 points worse than OR-Tools. Overlap clearly helps within the zone-specific method (no overlap −2.6%, 2 zones −5.3%, 3 zones −6.4%, greedy order).
-3. **A zone-crossing penalty on plain LNS gives a better time/tidiness trade-off than the zone-specific method.** Plain LNS with λ=60 s: −9.9% travel time with 22.7 zone changes (driver: 21.9); with λ=120 s: −8.5% with 20.6. Zone-specific LNS at similar tidiness reaches −8.1% (22.6 changes) and −7.3% (20.9).
-4. **The zone-order GNN is weak.** Its zone order correlates with the driver's at τ = +0.063 (sd 0.65 over routes), against +0.014 for a random order; that difference is not clearly real (≈0.05 ± 0.09). Used inside zone-specific LNS it gives the same travel time as the greedy order and is 2.6 ± 0.4 points worse than the zone-level-routing order.
-5. **The driver's zone order is what makes routes look like the driver's.** With the driver's own zone order (oracle, not deployable), similarity to the driver's stop order is 0.944 (vs ≈ 0 for every other method) and late stops stay at driver level. A good zone-order predictor would therefore matter, but ours is far from the oracle.
-6. **Ignoring time windows has a cost.** Unconstrained LNS has 0.70 late stops per route (driver 0.18). A lateness penalty in the acceptance rule brings that to 0.17–0.19 for 0.4–0.5 points of travel time.
-7. **Perspective:** travel time is 40% of the route duration (service time, 16,297 s per route, is the same for every method). LNS's 12% travel saving is **4.6% of the driver's route duration**.
+**Corrections made on the way (so older numbers must not be used).** (a) 42% of routes have at least one stop without a zone ID (0.7% of stops). They had been treated
+as the depot's zone; they now take the zone of the nearest stop, as in the LKH-AMZ paper. Every zone-dependent result was rerun. (b) The LNS was re-implemented in compiled code
+(25–65× faster at equal quality) and its neighbourhood size was tuned. (c) The first OR-Tools run was repeated: a time-limited search varies from run to run, and both runs are shown.
 
-## 1. Baselines and plain LNS (λ = 0, primary target: travel time)  — `exp10_no_gnn.csv`, `exp13_ortools.csv`
+**Not done:** LKH3, the financial metric (no cost parameters were provided), multiple seeds, a validated time-window metric (section 6), anything beyond the 6,112 routes of the training folder.
 
-| Method | Gap vs driver | Zone changes | Similarity to driver | Late stops / route |
-|---|---|---|---|---|
-| driver | 0 | 21.85 | 1.000 | 0.18 |
-| nearest neighbour | +2.17% | 40.87 | −0.012 | 0.82 |
-| OR-Tools, 2 s | −10.17% | 37.30 | −0.032 | 0.75 |
-| OR-Tools, 10 s | −10.82% | 36.88 | −0.036 | 0.67 |
-| LNS, 500 iterations | −11.41% | 36.19 | −0.015 | 0.71 |
-| LNS, 1,500 iterations | −12.01% | 35.84 | −0.014 | 0.70 |
-| LNS, 5,000 iterations | −12.26% | 35.62 | −0.005 | 0.74 |
-| LNS, 15,000 iterations | −12.40% | 35.52 | −0.009 | 0.74 |
+## 1. Main findings
 
-Diminishing returns: each 3–4× increase in iterations buys 0.15–0.6 points (paired: 500→1,500 −0.59 ± 0.12; 1,500→5,000 −0.26 ± 0.08; 5,000→15,000 −0.14 ± 0.06).
+1. **Plain LNS finds the shortest routes.** −13.80% travel time against the driver, and 3.42 ± 0.27 points better than OR-Tools at 10 s (better on 98% of routes); single-process run time 2.0 s against 10 s (T1, T6, T8).
+2. **Global SA is the weaker optimiser but still beats OR-Tools:** 1.50 ± 0.19 points worse than LNS, 1.92 ± 0.24 better than OR-Tools (T6).
+3. **Zonal methods (approaches 1 and 3) are far faster and still beat OR-Tools on travel time when the zone order is chosen by zone-level routing:** −11.29% (0.91 ± 0.37 points better than OR-Tools 10 s) in 0.15 s (zonal LNS) or 0.72 s (zonal SA), clean timings (T1, T6, T8). **SA and LNS give the same result inside the zonal pipeline** (difference 0.02 ± 0.08).
+4. **Zonal methods cost travel time against global LNS (2.52 ± 0.32 points for zone-level routing order) but produce routes much closer to the drivers' when the zone order comes from data.** With the zone order of the best-matching training route, the challenge's official score falls from 0.058 (plain LNS) and 0.064 (OR-Tools) to 0.035 at the balanced setting λ = 60 (differences −0.023 ± 0.004 and −0.029 ± 0.004, better on 80% and 89% of routes), at a cost of 3.57 ± 0.39 points of travel time against plain LNS (T2, T6).
+5. **The zone order is the key ingredient.** The driver's own zone order (an oracle, not deployable) gives similarity 0.94 and official score 0.009; the data-derived orders reach 0.60 and 0.033–0.035; orders from geometry alone (nearest zone, zone-level routing) give ≈ 0 similarity (T2, T7).
+6. **A GNN adds nothing measurable over copying the best reference route.** With the reference route's order as input the GNN predicts the driver's zone order as well as the reference does (Kendall τ +0.624 vs +0.626 on average, median 0.872 vs 0.750), and the routes it yields score the same (difference −0.0021 ± 0.0023, T6, T7). Without that input the GNN's validation next-zone accuracy is lower (about 76% against 82% with the reference features; the test comparison with and without is in T7 when `zone_gnn_geom.json` exists).
+7. **The balance of time and driver-likeness is tunable, and the best frontier comes from combining a data-derived zone order with the soft order penalty ρ and a global refinement (T3, T4, `figures/score_vs_time.png`).** At about the same travel time (−12.7% for ρ = 30 s against −12.9% for plain LNS with λ = 30 s) its official score is 0.048 against 0.064; at ρ = 100 s it reaches −9.7% travel time with score 0.037, where plain LNS with the zone penalty needs λ = 120 s (−10.6%) to get down to 0.054.
+8. **Time windows:** unconstrained methods have many more late stops than the driver (0.66 vs 0.18 per route in our own timeline), and a lateness penalty removes almost all of them (0.02) for 0.32 ± 0.12 points of travel time (T5). This metric could not be validated against the literature (section 6).
+9. **The savings are modest in the context of a whole route.** Travel time is 40% of a route (10,923 s of 27,393 s per route; service time is the same for every method). Plain LNS saves 1,466 s of travel (5.4% of the driver's route duration); after waiting for time windows to open, in our timeline, the net saving is 914 s (3.4%).
 
-**Run times** (clean run: 20 routes, one process, nothing else running; `exp14_timing.csv`). Times in the other CSVs were measured with several worker processes and some with other jobs running, so they are inflated; use this table.
+## 2. Approach by approach
 
-| Method | Mean seconds per route | Gap on these 20 routes |
-|---|---|---|
-| LNS 500 | 0.42 | −10.66% |
-| LNS 1,500 | 1.33 | −11.43% |
-| LNS 5,000 | 4.26 | −11.79% |
-| zone-specific, zone-level-routing order, w=3 | 0.74 | −8.79% |
-| zone-specific, GNN order, w=3 | 0.66 | −7.37% |
-| zone-specific, greedy order, w=2 | 0.70 | −5.47% |
-| OR-Tools, 2 s | 2.00 | −8.94% |
-| OR-Tools, 10 s | 10.0 median (mean 29.3) | −9.38% |
+* **Approach 2 (plain LNS)** is the best optimiser here. The largest single gain came from allowing much larger neighbourhoods (removing up to half the stops per iteration; section 7). Adding a penalty λ per zone change gives a smooth trade-off (T3): λ = 30 s already removes 68% of the extra zone changes (33.0 → 24.3 against the driver's 20.3) at a cost of 0.9 points of travel time.
+* **Approach 1 (zonal LNS)** reaches OR-Tools-level or better travel time in about 1/70 of the time, and is the only method here that produces driver-like routes, but only if its zone order comes from the training data. It is clearly worse than plain LNS on travel time.
+* **Approach 3 (zonal SA)** is, in this pipeline, indistinguishable from approach 1. SA only matters globally, where it is weaker than LNS.
+* **OR-Tools** was run with one fixed configuration (guided local search). A tuned configuration, other solvers or longer runs were not explored beyond section 5.
 
-The OR-Tools mean is inflated by one run that took 395 s (route `0f6118f8…`); the same route rerun alone took 10.3 s with the same quality, so this was a machine hiccup, not a property of the method.
+## 3. Soft zone order and zone penalties
 
-**Paired comparison with OR-Tools 10 s** (percentage points of the driver's travel time; negative = first method better; `figures/vs_ortools.png`):
+With a data-derived zone order the penalty ρ on edges that go back to an earlier zone (T4) trades travel time against similarity to the driver: ρ = 30 s gives −12.73% travel time at similarity 0.51 and score 0.048; ρ = 300 s gives −6.82% at 0.62 and 0.032. (All with the global refinement stage.)
 
-| First method | Difference | Better on |
-|---|---|---|
-| LNS 500 | −0.59 ± 0.27 | 65% of routes |
-| LNS 1,500 | −1.18 ± 0.27 | 76% |
-| LNS 15,000 | −1.58 ± 0.27 | 81% |
-| LNS 1,500, λ=60 vs OR-Tools λ=60 | −0.40 ± 0.31 | 61% |
-| zone-specific (zone-level routing, w=3) | +1.65 ± 0.49 | 35% |
-| zone-specific (zone-level routing, w=3), λ=60 vs OR-Tools λ=60 | +2.22 ± 0.44 | 23% |
+## 4. Comparison with the literature (1,107 High+Delivered routes)
 
-OR-Tools was used with one fixed configuration (guided local search, default settings); a tuned OR-Tools or longer runs could narrow the gap. LKH3, the stronger reference, is missing.
+The test set of the LKH-AMZ paper was reproduced exactly (1,107 routes: High quality and no DELIVERY_ATTEMPTED package). Three published figures are reproduced to the digit or within a trial's noise:
+the driver's mean closed-tour time (12,250.0 s), the number of stops (163,177) and the official score of random tours (0.9127 vs 0.91545). This validates the data handling, the closed-tour definition and our re-implementation of the official score.
+Our near-optimal closed tours are **0.9% above the proven-optimal mean travel time** of the paper (10,958 s and 10,945 s at 5,000 and 15,000 iterations, against 10,853.3 s), and our zone-clustered tours are 0.6–0.8% above their optimal clustered tours
+(11,298–11,330 s against 11,235.1 s). With a reference-route zone order our pipeline scores 0.0347 against 0.0317–0.0332 for LKH-AMZ with learned precedence constraints; with the driver's zone order 0.0079 against 0.0051–0.0074.
+The first-prize competition score listed in that paper is 0.0248; this repository does not reach it. The gap to LKH-AMZ has two parts that this study cannot separate: a weaker optimiser (LNS rather than LKH-AMZ) and fewer constraints (the paper adds hierarchical clustering by zone-ID components and further precedence constraints).
 
-## 2. Zone-specific LNS, λ = 0 — `exp10_no_gnn.csv`, `exp12_gnn_order.csv`
+## 5. What is inside OR-Tools (CP-SAT vs MIP vs routing solver vs our LNS)
 
-Zone order → solve each zone → re-optimise overlapping windows of `w` zones (METHODS §4). w = 1 means no overlap.
+* On **small** instances CP-SAT proves optimality quickly (all 15 instances up to 20 stops, 9 of 15 at 30 stops, 4 of 15 at 40 in 20 s with one worker). The textbook MIP formulation (Miller–Tucker–Zemlin, SCIP) is slower at 20–30 stops and finds the best solution less often from 25 stops, but proves optimality on more 40-stop instances than CP-SAT (7 vs 4). (T9)
+* **LNS** found the best known solution on 40–67% of the instances with 15–40 stops (mean excess 0.4–0.7%): it is not exact even on 15 stops, which is consistent with its 0.6% average gap to CP-SAT on full-size routes.
+* On **full-size** routes CP-SAT, warm-started with our LNS route, improves it by only 0.61% on average in 60 s (max 1.9%) and proves optimality on 2 of 20; its proven lower bound is far too weak at this size (median 24% below) to certify near-optimality. Together with the literature anchor (0.9% above optimal), LNS is within about 1% of optimal.
+* CP-SAT and the routing solver were **not** compared at equal time on full-size routes; the routing solver is the baseline in all other tables.
+* A possible follow-up from the professor's suggestion, not done here: solving the windows of the zonal method with CP-SAT.
 
-| Zone order | w | Gap vs driver | Zone changes | Similarity to driver | Zone-order similarity |
-|---|---|---|---|---|---|
-| greedy | 1 | −2.60% | 19.73 | −0.013 | −0.034 |
-| greedy | 2 | −5.30% | 27.59 | −0.015 | −0.034 |
-| greedy | 3 | −6.39% | 29.41 | −0.015 | −0.033 |
-| zone-level routing | 2 | −8.16% | 27.59 | −0.017 | −0.031 |
-| zone-level routing | 3 | −9.17% | 29.44 | −0.018 | −0.030 |
-| GNN | 2 | −5.53% | 27.48 | 0.073 | 0.062 |
-| GNN | 3 | −7.16% | 30.23 | 0.072 | 0.061 |
-| driver's (oracle) | 2 | −5.47% | 26.89 | **0.944** | **0.985** |
-| random | 2 | +26.01% | 23.38 | 0.022 | 0.014 |
+## 6. Time windows: the metric is not validated
 
-Paired differences (points): overlap w=2 vs w=1 (greedy) −2.70 ± 0.24, better on every route; w=3 vs w=2 −1.10 ± 0.16; zone-level routing vs greedy order (w=2) −2.87 ± 0.32; **driver's order vs greedy order −0.17 ± 0.46 (no difference in travel time)**; GNN vs greedy −0.24 ± 0.41 (no difference); GNN vs zone-level routing +2.63 ± 0.39 (GNN worse); random vs greedy +31.3 ± 2.3 (sanity check passes: a bad zone order costs a lot).
+The paper reports 647 time-window violations for the driver tours (0.58 per route); our metric gives 0.11 per route on the same routes, and none of four alternative readings (counting packages, requiring service to finish in the window, counting early arrivals) reproduces 647 (112–381). The definition in the paper is not precise enough for us to settle this. Late-stop and duration figures here are therefore in our own definition only and are not comparable to the paper.
 
-Reading: zone order matters a lot for travel time when it is bad (random), and for similarity to the driver when it is right (oracle), but the driver's zone order is *not* better for travel time than a simple rule. Zone-level routing gives the best travel time of the zone-specific variants.
+## 7. How the settings were chosen (validation routes only)
 
-## 3. Zone-crossing penalty (balance of time and tidiness) — `exp11_penalty.csv`, `exp12_gnn_order.csv`
+* **LNS neighbourhood:** the number of removed stops is drawn up to `m/kmax`. With `kmax = 2` (up to half of the stops) 5,000 iterations reached −14.07% on 60 validation routes, while the original `kmax = 8` reached only −12.69% at 15,000 iterations, −12.81% at 50,000 and −12.84% at 150,000: the larger neighbourhood beat the default even when the default was given 10–30× more iterations. The starting temperature, end temperature and minimum removal size made no measurable difference.
+* **SA temperature:** a hotter start was clearly better (t0 = 0.05: −10.50%, 0.2: −11.71%, 0.5: −12.51%, 1: −12.33%, 2: −12.43%); `t0 = 0.5` was used.
+* **Local-search polish after LNS** added only about 0.03 points and is not used.
+* **Zonal settings** (windows of 3 zones; 1,000 iterations per zone and 1,500 per window for LNS, 50,000 and 300,000 for SA) were chosen on validation routes **before** the missing-zone fix and were not re-tuned afterwards. The penalty values (λ, ρ, μ) are a fixed grid, not tuned.
+* Raw tuning outputs: `results/tuning/` (the files in `archive_before_zone_fix/` predate the fix and are not used).
 
-λ = penalty in seconds per zone change (METHODS §1). Mean zone changes per route; the driver makes 21.85. Figure: `figures/tradeoff.png`.
+## 8. Feasibility and limits
 
-| λ (s) | Plain LNS: gap / zone changes | Zone-specific (zone-level routing, w=3) | Zone-specific (GNN, w=3) |
-|---|---|---|---|
-| 0 | −12.01% / 35.84 | −9.17% / 29.44 | −7.16% / 30.23 |
-| 15 | −11.95% / 30.01 | −8.72% / 24.80 | – |
-| 30 | −11.35% / 26.31 | −8.07% / 22.56 | – |
-| 60 | −9.92% / 22.71 | −7.30% / 20.89 | −5.09% / 21.16 |
-| 120 | −8.45% / 20.64 | −6.45% / 20.02 | – |
+* Computationally feasible: 0.15 s (zonal LNS) to 2 s (plain LNS) per route on a laptop CPU; OR-Tools needs 10 s for a worse result.
+* The reference-route zone order needs historical routes from the same depot (here 3,691 training routes); for a new depot no reference exists, and a GNN that sees only geometry and travel times has lower validation accuracy and is not a substitute.
+* All gains are measured on the travel-time matrix, which holds estimates (no parking, construction or real traffic), and on a route-level metric that omits service time (the same for all methods). Whether drivers would accept routes that differ from theirs is not tested; the official score is only a proxy for that.
+* The numbers come from one seed and 207 routes; intervals cover route variation, not run-to-run variation. OR-Tools results varied between two runs by 0.4 points at 10 s and 1.5 points at 2 s.
 
-Compared at matching numbers of zone changes, plain LNS keeps more of the travel-time saving: about 22.6 changes — plain LNS (λ=60) −9.92% vs zone-specific (λ=30) −8.07%, i.e. 1.9 points more; about 20.6–20.9 changes — plain LNS (λ=120) −8.45% vs zone-specific (λ=60) −7.30%, i.e. 1.2 points more. (These are comparisons of mean values at slightly different tidiness, not paired tests.) Relative to the unpenalised plain LNS (35.8 changes, 14 more than the driver), a penalty of λ=15 removes 42% of the extra zone changes at a cost of 0.06 points of travel time, and λ=30 removes 68% at a cost of 0.66 points. The "right" λ depends on how much a zone change is worth, which is a decision for the project, not something the data decides.
-
-## 4. Zone-order GNN — `zone_gnn.json`, `zone_gnn_train.log`
-
-Imitation of the driver's zone order only (no reinforcement learning). 1,815 training routes, 598 validation routes, 207 test routes; 22 epochs run (early stopping on validation τ), best validation τ = +0.088.
-
-| Zone order | Test τ vs driver: mean | median | sd |
-|---|---|---|---|
-| GNN | +0.063 | +0.145 | 0.650 |
-| greedy (nearest zone next) | −0.034 | −0.095 | 0.485 |
-| zone-level routing | −0.033 | −0.116 | 0.591 |
-| random | +0.014 | +0.014 | 0.166 |
-
-The GNN is the best of the four on the median, but the mean difference to random is small relative to the spread (standard error of the GNN mean ≈ 0.045). In the downstream test (section 2) it raises similarity to the driver by +0.088 ± 0.083 over the greedy order and does not reduce travel time. **Conclusion: with these features and ~1,800 training routes the model has learned only a little about drivers' zone order.** Possible reasons (not tested): too little data; features that cannot capture drivers' habits (street layout, access); noise in the labels.
-
-## 5. Service times and time windows (evaluation only, plus one penalised variant) — `exp10_no_gnn.csv`, `exp15_timewindows.csv`
-
-Per route (means over 207 routes): driver travel time 10,923 s, service time 16,297 s (60% of the 27,393 s duration), 9.4 stops with a time window out of 149. Lateness is simulated with the matrix travel times and planned service times (METHODS §1); the driver's real lateness is not known.
-
-| Method | Gap vs driver | Late stops / route | Late seconds / route |
-|---|---|---|---|
-| driver | 0 | 0.18 | 301 |
-| OR-Tools 10 s | −10.82% | 0.67 | 2,450 |
-| LNS 1,500 | −12.01% | 0.70 | 2,883 |
-| LNS, lateness penalty μ=1 | −11.62% | 0.19 | 695 |
-| LNS, lateness penalty μ=5 | −11.50% | 0.17 | 473 |
-| LNS λ=60 | −9.92% | 0.71 | 2,553 |
-| LNS λ=60, μ=5 | −9.61% | 0.25 | 784 |
-| zone-specific, driver's order (oracle), w=2 | −5.47% | 0.21 | – |
-
-μ = penalty per second of lateness, applied when accepting a move (so it does not steer where stops are inserted). Cost of μ=5 versus plain LNS: +0.51 ± 0.17 points. Only 6% of stops have a window, so this is a small effect on travel time but it removes most of the extra lateness. The oracle zone-specific route has driver-like lateness without any penalty, which suggests the driver's zone order carries information about the windows.
-
-## 6. Honest assessment
-
-* **Is the primary target met?** Yes for plain LNS: it reduces travel time against the driver by 12.0% ± 0.7 (95% interval over routes; shorter than the driver on 207 of 207 routes) and beats OR-Tools, in about 1/8 of its time in the clean timing (1.3 s vs 10 s). The saving is 4.6% of total route duration, and rests on the travel-time matrix being accurate (it holds estimated, not measured, travel times).
-* **Is the zone-specific approach worth it?** On this evidence, not on travel time. It is not better than plain LNS, even with overlap and a zone-order model, and it is worse than OR-Tools. Its only demonstrated advantages are speed (0.7 s vs 1.3 s at the tested budgets, a small difference) and, with the *oracle* zone order, driver-like routes. A zone-order model that closes the gap to the oracle would change this, but ours does not (τ +0.063 vs 0.985).
-* **Is the GNN useful?** Not yet. Used at route level earlier (`exp02_gnn.csv` of the main branch, 62 routes) it built routes 8.8% longer than the driver's and 7.1 ± 1.6 points worse than nearest neighbour, and gave no change as a warm start for SA or LNS; used at zone level it is better than the rules on the median but weak.
-* **Open risks for a paper:** single seed; 207 test routes; untuned parameters; no LKH3; no official challenge score; the 12% claim is on a modelled quantity.
-
-## 7. Reproduce
+## 9. Reproduce
 
 ```
-pip install -e ".[gnn,baselines,dev]"
-python scripts/train_zone_gnn.py --epochs 30 --out results/zone_gnn.pt
-python scripts/run_specs.py --out results/exp10_no_gnn.csv driver nn lns:i=500 lns:i=1500 lns:i=5000 lns:i=15000 zlns:order=greedy:w=1 zlns:order=greedy:w=2 zlns:order=greedy:w=3 zlns:order=ztsp:w=2 zlns:order=driver:w=2 zlns:order=random:w=2
-python scripts/run_specs.py --out results/exp12_gnn_order.csv --zone-model results/zone_gnn.pt zlns:order=gnn:w=2:l=0 zlns:order=gnn:w=3:l=0 ...   # and l=15,30,60,120
-python scripts/run_specs.py --out results/exp13_ortools.csv ortools:t=10 ortools:t=2 ortools:t=10:l=60     # nothing else running
-python scripts/run_specs.py --out results/exp15_timewindows.csv lns:i=1500:mu=1 lns:i=1500:mu=5 lns:i=1500:l=60:mu=5
+pip install -e ".[gnn,baselines,dev]" numba
+bash scripts/run_final.sh                       # test routes, OR-Tools, literature set, timings (several hours)
+python scripts/train_zone_gnn.py --ref --out results/zone_gnn_ref.pt     # zone-order GNN with reference features
+python scripts/solver_study.py --out results/exp40_solver_study            # CP-SAT / MIP / LNS
+python scripts/make_tables.py > docs/RESULTS_tables.md                    # all tables below
 python scripts/make_figures.py
 ```
+
+---
+
+# Tables (generated)
+
+## Test routes: 207 routes (hash split), seed 0
+
+### T1. Travel time first (lambda = 0)
+
+| method | travel time vs driver % | zone changes | similarity to driver | official score (lower=better) | late stops/route |
+|---|---|---|---|---|---|
+| driver | 0.00 | 20.3 | 1.000 | 0.0000 | 0.18 |
+| nearest neighbour | 2.17 | 39.5 | -0.012 | 0.1118 | 0.82 |
+| OR-Tools 2 s | -8.69 | 36.6 | -0.028 | 0.0978 | 0.75 |
+| OR-Tools 10 s | -10.38 | 35.8 | -0.043 | 0.0931 | 0.73 |
+| **plain LNS (approach 2)** | -13.80 | 33.0 | -0.031 | 0.0798 | 0.66 |
+| global SA | -12.30 | 34.5 | 0.002 | 0.0847 | 0.68 |
+| zonal LNS, zone-level routing order | -11.29 | 29.2 | -0.021 | 0.0688 | 0.62 |
+| zonal LNS, reference-route order | -9.64 | 28.9 | 0.595 | 0.0432 | 0.53 |
+| zonal LNS, GNN+reference order | -9.86 | 29.0 | 0.590 | 0.0416 | 0.61 |
+| zonal SA (third approach), zone-level routing order | -11.27 | 29.2 | -0.019 | 0.0697 | 0.60 |
+| zonal SA, reference-route order | -9.74 | 29.4 | 0.589 | 0.0448 | 0.48 |
+| zonal LNS, driver's order (oracle, not deployable) | -9.49 | 29.3 | 0.920 | 0.0132 | 0.18 |
+
+OR-Tools 10 s was run twice (time-limited, so results vary): run 1 -10.82% travel time vs driver; run 2 (table above) -10.38%.
+
+### T2. Balanced objective (zone-change penalty lambda = 60 s)
+
+| method | travel time vs driver % | zone changes | similarity to driver | official score (lower=better) | late stops/route |
+|---|---|---|---|---|---|
+| driver | 0.00 | 20.3 | 1.000 | 0.0000 | 0.18 |
+| OR-Tools 10 s | -9.37 | 22.0 | 0.027 | 0.0642 | 0.69 |
+| plain LNS | -11.64 | 21.3 | 0.011 | 0.0580 | 0.65 |
+| global SA | -10.46 | 22.1 | 0.031 | 0.0628 | 0.69 |
+| zonal LNS, zone-level routing order | -9.63 | 20.5 | -0.022 | 0.0553 | 0.64 |
+| zonal LNS, greedy order | -7.35 | 20.4 | -0.019 | 0.0617 | 0.66 |
+| zonal LNS, reference-route order | -8.07 | 20.5 | 0.605 | 0.0349 | 0.53 |
+| zonal LNS, GNN+reference order | -8.18 | 20.5 | 0.600 | 0.0328 | 0.64 |
+| zonal SA, reference-route order | -8.29 | 20.6 | 0.598 | 0.0357 | 0.52 |
+| zonal SA, GNN+reference order | -8.44 | 20.7 | 0.592 | 0.0336 | 0.63 |
+| zonal LNS, driver's order (oracle) | -7.77 | 20.5 | 0.939 | 0.0093 | 0.20 |
+
+### T3. Zone-change penalty sweep, plain LNS
+
+| method | travel time vs driver % | zone changes | similarity to driver | official score (lower=better) | late stops/route |
+|---|---|---|---|---|---|
+| driver | 0.00 | 20.3 | 1.000 | 0.0000 | 0.18 |
+| lambda = 0 | -13.80 | 33.0 | -0.031 | 0.0798 | 0.66 |
+| lambda = 15 | -13.46 | 27.6 | -0.004 | 0.0701 | 0.71 |
+| lambda = 30 | -12.87 | 24.3 | -0.012 | 0.0638 | 0.58 |
+| lambda = 60 | -11.64 | 21.3 | 0.011 | 0.0580 | 0.65 |
+| lambda = 120 | -10.55 | 19.8 | -0.005 | 0.0541 | 0.78 |
+
+### T4. Soft zone-order penalty rho (reference-route order, then global LNS refinement of 5,000 iterations)
+
+| method | travel time vs driver % | zone changes | similarity to driver | official score (lower=better) | late stops/route |
+|---|---|---|---|---|---|
+| rho = 30 | -12.73 | 26.8 | 0.508 | 0.0478 | 0.59 |
+| rho = 100 | -9.69 | 21.5 | 0.597 | 0.0367 | 0.61 |
+| rho = 300 | -6.82 | 19.5 | 0.624 | 0.0320 | 0.51 |
+| no refinement (windows only), lambda=0 | -9.64 | 28.9 | 0.595 | 0.0432 | 0.53 |
+| GNN+ref, rho = 100 | -9.59 | 21.5 | 0.577 | 0.0366 | 0.63 |
+
+### T5. Time windows (lateness penalty mu, evaluation under our own definition; NOT validated against the paper)
+
+| method | travel time vs driver % | zone changes | similarity to driver | official score (lower=better) | late stops/route |
+|---|---|---|---|---|---|
+| driver | 0.00 | 20.3 | 1.000 | 0.0000 | 0.18 |
+| OR-Tools 10 s | -10.38 | 35.8 | -0.043 | 0.0931 | 0.73 |
+| plain LNS | -13.80 | 33.0 | -0.031 | 0.0798 | 0.66 |
+| plain LNS + lateness penalty mu=5 | -13.48 | 32.8 | -0.011 | 0.0808 | 0.02 |
+| plain LNS lambda=60 | -11.64 | 21.3 | 0.011 | 0.0580 | 0.65 |
+| plain LNS lambda=60 + mu=5 | -11.31 | 21.4 | 0.046 | 0.0574 | 0.04 |
+
+### T6. Paired differences (percentage points of the driver's travel time; negative = first method has LESS travel time)
+
+| comparison | mean difference (points) | 95% interval +- | first better on % of routes | n |
+|---|---|---|---|---|
+| plain LNS vs OR-Tools 10 s | -3.42 | 0.27 | 98 | 207 |
+| global SA vs OR-Tools 10 s | -1.92 | 0.24 | 89 | 207 |
+| global SA vs plain LNS | 1.50 | 0.19 | 11 | 207 |
+| zonal LNS (ztsp) vs OR-Tools 10 s | -0.91 | 0.37 | 64 | 207 |
+| zonal SA vs zonal LNS (same order) | 0.02 | 0.08 | 47 | 207 |
+| zonal LNS (ztsp) vs plain LNS | 2.52 | 0.32 | 8 | 207 |
+| plain LNS vs OR-Tools, lambda=60 | -2.28 | 0.26 | 90 | 207 |
+| zonal LNS (ref) vs plain LNS, lambda=60 | 3.57 | 0.39 | 6 | 207 |
+| zonal LNS (ref) vs OR-Tools, lambda=60 | 1.30 | 0.44 | 37 | 207 |
+| zonal LNS: GNN+ref order vs ref order, lambda=60 | -0.11 | 0.26 | 34 | 207 |
+| cost of the lateness penalty mu=5 | 0.32 | 0.12 | 14 | 207 |
+
+Official score, paired (negative = first method scores better):
+
+| comparison | mean difference | 95% interval +- | first better on % of routes | n |
+|---|---|---|---|---|
+| zonal LNS (ref) vs plain LNS, lambda=60 | -0.0231 | 0.0041 | 80 | 207 |
+| zonal LNS (ref) vs OR-Tools, lambda=60 | -0.0293 | 0.0041 | 89 | 207 |
+| GNN+ref vs ref order, lambda=60 | -0.0021 | 0.0023 | 46 | 207 |
+| ref order vs zone-level routing order | -0.0204 | 0.0041 | 78 | 207 |
+
+### T7. Zone-order prediction (Kendall tau between predicted and the driver's zone order, 207 test routes)
+
+| order | mean | median | sd |
+|---|---|---|---|
+| GNN WITH reference-route features: gnn (greedy decoding) | 0.572 | 0.818 | 0.531 |
+| GNN WITH reference-route features: gnn (beam 20) | 0.624 | 0.872 | 0.503 |
+| greedy (nearest zone next) | -0.030 | -0.077 | 0.499 |
+| ztsp (zone-level routing) | -0.037 | -0.105 | 0.608 |
+| reference route (no learning) | 0.626 | 0.750 | 0.398 |
+| random | -0.002 | 0.005 | 0.161 |
+
+## Comparison with the literature: 1107 High+Delivered routes (paper: 1,107)
+
+| method | mean closed-tour time (s) | official score | zone changes |
+|---|---|---|---|
+| closed LNS, no zone penalty (near-optimal ATSP tours) | 10958.0 | 0.07375 | 32.4 |
+| closed LNS, 15,000 iterations | 10944.7 | 0.07366 | 32.3 |
+| closed LNS, lambda=3000 (zone-clustered) | 11329.6 | 0.05031 | 19.2 |
+| closed LNS, lambda=30000, 15,000 iterations (zone-clustered) | 11298.0 | 0.04939 | 19.2 |
+| plain LNS lambda=60 (open path) | 11294.4 | 0.05175 | 20.8 |
+| zonal LNS, reference-route order, lambda=60 | 11581.0 | 0.03470 | 20.1 |
+| zonal LNS, driver's order (oracle), lambda=60 | 11591.4 | 0.00788 | 20.0 |
+| zonal LNS, zone-level routing order, lambda=60 | 11485.8 | 0.04866 | 20.1 |
+| global SA lambda=60 | 11415.4 | 0.05734 | 21.4 |
+| driver | 12250.0 | 0.00000 | 20.0 |
+| nearest neighbour | 12662.8 | 0.09969 | 38.4 |
+
+Random tours, official score, mean of 10 trials: 0.91270 (paper 0.91545). Driver stops: 163177 (paper 163,177).
+Paper (Cook et al.): optimal ATSP tours 10,853.3 s / 0.07030; optimal zone-clustered tours 11,235.1 s / 0.04866; driver zone order with LKH-AMZ 0.00510-0.00738; reference-route precedence constraints 0.03171-0.03322; best entry 0.0248 (competition).
+
+### T8. Clean timings (20 test routes, one process, nothing else running)
+
+| method | mean_secs | median_secs | gap | score | routes |
+|---|---|---|---|---|---|
+| lns:i=5000:kmax=2 | 1.98 | 1.93 | -13.22 | 0.0766 | 20 |
+| ortools:t=10 | 10.10 | 10.00 | -9.08 | 0.0915 | 20 |
+| ortools:t=2 | 2.00 | 2.00 | -8.30 | 0.0936 | 20 |
+| sa:i=5000000:t0=0.5 | 0.86 | 0.86 | -11.01 | 0.0852 | 20 |
+| zlns:order=gnn:beam=20:w=3:ii=1000:wi=1500:kmax=2 | 0.35 | 0.33 | -9.28 | 0.0320 | 20 |
+| zlns:order=ref:w=3:ii=1000:wi=1500:kmax=2 | 0.14 | 0.14 | -9.11 | 0.0388 | 20 |
+| zlns:order=ztsp:w=3:ii=1000:wi=1500:kmax=2 | 0.15 | 0.15 | -9.95 | 0.0676 | 20 |
+| zsa:order=ztsp:w=3:ii=50000:wi=300000:t0=0.5 | 0.72 | 0.71 | -9.94 | 0.0661 | 20 |
+
+### T9. OR-Tools solvers on small instances (first k stops of validation routes, 20 s limit, 1 worker each)
+
+| k | routes | CP-SAT proved optimal | MIP proved optimal | CP-SAT mean s | MIP mean s | LNS found best known % | CP-SAT found best known % | MIP found best known % | LNS excess over best % |
+|---|---|---|---|---|---|---|---|---|---|
+| 10 | 15 | 15 | 15 | 0.5 | 0.4 | 100.0 | 100.0 | 100.0 | 0.0 |
+| 15 | 15 | 15 | 15 | 0.1 | 0.9 | 66.7 | 100.0 | 100.0 | 0.4 |
+| 20 | 15 | 15 | 13 | 0.6 | 5.8 | 60.0 | 100.0 | 100.0 | 0.6 |
+| 25 | 15 | 14 | 11 | 4.6 | 9.6 | 40.0 | 100.0 | 73.3 | 0.7 |
+| 30 | 15 | 9 | 9 | 9.5 | 12.9 | 53.3 | 100.0 | 66.7 | 0.5 |
+| 40 | 15 | 4 | 7 | 16.9 | 15.4 | 40.0 | 66.7 | 46.7 | 0.5 |
+
+Full-size routes (20 validation routes, CP-SAT 60 s, 2 workers, warm start from LNS): CP-SAT improves the LNS route by 0.61% on average (median 0.45%, max 1.92%); proved optimal on 2 of 20; median proven optimality gap 23.9%.

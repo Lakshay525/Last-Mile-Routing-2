@@ -1,0 +1,26 @@
+{
+  "specs": [
+    "driver",
+    "sa:i=5000000:t0=0.2",
+    "sa:i=5000000:t0=0.5",
+    "sa:i=5000000:t0=1",
+    "sa:i=5000000:t0=2",
+    "sa:i=5000000:t0=1:tf=0.01",
+    "zsa:order=ztsp:w=3:ii=50000:wi=300000:t0=0.5",
+    "zsa:order=ztsp:w=3:ii=50000:wi=300000:t0=1",
+    "zsa:order=ztsp:w=3:ii=50000:wi=300000:t0=2"
+  ],
+  "n_routes": 3000,
+  "limit": 60,
+  "split": "val",
+  "subset": null,
+  "workers": 4,
+  "zone_model": "results/zone_gnn.pt",
+  "seed": 0,
+  "no_packages": true,
+  "out": "results/tuning/t7_sa_temp.csv",
+  "commit": "cbefa55",
+  "date": "2026-10-26",
+  "n_routes_evaluated": 60,
+  "wall_seconds": 213
+}

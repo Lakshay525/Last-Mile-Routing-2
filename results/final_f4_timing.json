@@ -1,0 +1,25 @@
+{
+  "specs": [
+    "lns:i=5000:kmax=2",
+    "sa:i=5000000:t0=0.5",
+    "zlns:order=ztsp:w=3:ii=1000:wi=1500:kmax=2",
+    "zlns:order=ref:w=3:ii=1000:wi=1500:kmax=2",
+    "zlns:order=gnn:beam=20:w=3:ii=1000:wi=1500:kmax=2",
+    "zsa:order=ztsp:w=3:ii=50000:wi=300000:t0=0.5",
+    "ortools:t=10",
+    "ortools:t=2"
+  ],
+  "n_routes": 1000,
+  "limit": 20,
+  "split": "test",
+  "subset": null,
+  "workers": 1,
+  "zone_model": "results/zone_gnn_ref.pt",
+  "seed": 0,
+  "no_packages": false,
+  "out": "results/final_f4_timing.csv",
+  "commit": "cbefa55",
+  "date": "2026-10-27",
+  "n_routes_evaluated": 20,
+  "wall_seconds": 330
+}

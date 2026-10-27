@@ -1,0 +1,20 @@
+{
+  "specs": [
+    "ortools:t=10",
+    "ortools:t=2",
+    "ortools:t=10:l=60"
+  ],
+  "n_routes": 1000,
+  "limit": null,
+  "split": "test",
+  "subset": null,
+  "workers": 10,
+  "zone_model": null,
+  "seed": 0,
+  "no_packages": false,
+  "out": "results/final_f2_ortools.csv",
+  "commit": "cbefa55",
+  "date": "2026-10-26",
+  "n_routes_evaluated": 207,
+  "wall_seconds": 469
+}

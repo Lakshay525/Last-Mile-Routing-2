@@ -1,0 +1,27 @@
+{
+  "specs": [
+    "driver",
+    "lns:i=2000:kmax=4",
+    "lns:i=5000:kmax=4",
+    "lns:i=5000:kmax=3",
+    "lns:i=5000:kmax=2",
+    "lns:i=15000:kmax=3",
+    "lns:i=15000:kmax=2",
+    "lns:i=15000:kmax=4:kmin=20",
+    "lns:i=15000:kmax=4:kmin=10",
+    "lns:i=50000:kmax=4",
+    "lns:i=15000:kmax=4:t0=0.05"
+  ],
+  "n_routes": 3000,
+  "limit": 60,
+  "split": "val",
+  "workers": 10,
+  "zone_model": null,
+  "seed": 0,
+  "no_packages": true,
+  "out": "results/tuning/t2_neighbourhood.csv",
+  "commit": "cbefa55",
+  "date": "2026-10-26",
+  "n_routes_evaluated": 60,
+  "wall_seconds": 164
+}

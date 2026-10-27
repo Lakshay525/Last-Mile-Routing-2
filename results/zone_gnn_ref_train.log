@@ -1,0 +1,43 @@
+zone-order GNN: 3691 train routes, 1213 val routes, 207 test routes
+epoch  0  train NLL/step 1.441  val acc +0.706
+epoch  1  train NLL/step 1.107  val acc +0.725
+epoch  2  train NLL/step 1.006  val acc +0.736
+epoch  3  train NLL/step 0.944  val acc +0.747
+epoch  4  train NLL/step 0.898  val acc +0.761
+epoch  5  train NLL/step 0.859  val acc +0.769
+epoch  6  train NLL/step 0.831  val acc +0.776
+epoch  7  train NLL/step 0.808  val acc +0.779
+epoch  8  train NLL/step 0.784  val acc +0.788
+epoch  9  train NLL/step 0.769  val acc +0.790
+epoch 10  train NLL/step 0.751  val acc +0.794
+epoch 11  train NLL/step 0.736  val acc +0.796
+epoch 12  train NLL/step 0.725  val acc +0.799
+epoch 13  train NLL/step 0.716  val acc +0.801
+epoch 14  train NLL/step 0.704  val acc +0.803
+epoch 15  train NLL/step 0.696  val acc +0.806
+epoch 16  train NLL/step 0.686  val acc +0.808
+epoch 17  train NLL/step 0.680  val acc +0.810
+epoch 18  train NLL/step 0.673  val acc +0.811
+epoch 19  train NLL/step 0.669  val acc +0.813
+epoch 20  train NLL/step 0.661  val acc +0.812
+epoch 21  train NLL/step 0.658  val acc +0.815
+epoch 22  train NLL/step 0.652  val acc +0.813
+epoch 23  train NLL/step 0.646  val acc +0.815
+epoch 24  train NLL/step 0.642  val acc +0.817
+epoch 25  train NLL/step 0.636  val acc +0.817
+epoch 26  train NLL/step 0.632  val acc +0.817
+epoch 27  train NLL/step 0.629  val acc +0.817
+epoch 28  train NLL/step 0.625  val acc +0.819
+epoch 29  train NLL/step 0.620  val acc +0.819
+test zone-order tau vs driver  gnn (greedy decoding)        mean +0.572  median +0.818
+test zone-order tau vs driver  gnn (beam 20)                mean +0.624  median +0.872
+test zone-order tau vs driver  greedy (nearest zone next)   mean -0.030  median -0.077
+test zone-order tau vs driver  ztsp (zone-level routing)    mean -0.037  median -0.105
+Traceback (most recent call last):
+  File "D:\Deakin University\last-mile-routing-v2\scripts\train_zone_gnn.py", line 40, in <module>
+    taus = [order_tau(f(r), order_driver(r)) for r in te]
+            ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deakin University\last-mile-routing-v2\src\lmr\zone_gnn.py", line 89, in order_tau
+    return kendalltau(range(len(order_a)), [pos[z] for z in order_a])[0]
+                            ~~~^^^^^^^^^
+TypeError: object of type 'NoneType' has no len()

@@ -1,0 +1,27 @@
+  78/780 tasks  (21s)
+  156/780 tasks  (31s)
+  234/780 tasks  (50s)
+  312/780 tasks  (68s)
+  390/780 tasks  (90s)
+  468/780 tasks  (101s)
+  546/780 tasks  (114s)
+  624/780 tasks  (131s)
+  702/780 tasks  (155s)
+  780/780 tasks  (177s)
+                                                    gap_vs_driver  ...   secs
+method                                                             ...       
+driver                                                      0.000  ...  0.000
+lns:i=5000:kmax=2                                          -0.141  ...  2.961
+zlns:order=driver:w=3:ii=1000:wi=1500:kmax=2               -0.074  ...  0.251
+zlns:order=driver:w=3:ii=1000:wi=1500:kmax=2:g=...         -0.094  ...  3.207
+zlns:order=driver:w=3:ii=1000:wi=1500:kmax=2:g=...         -0.127  ...  3.205
+zlns:order=driver:w=3:ii=1000:wi=1500:kmax=2:g=...         -0.060  ...  3.164
+zlns:order=gnn:beam=1:w=3:ii=1000:wi=1500:kmax=2           -0.086  ...  0.247
+zlns:order=gnn:beam=20:w=3:ii=1000:wi=1500:kmax=2          -0.085  ...  0.558
+zlns:order=gnn:beam=20:w=3:ii=1000:wi=1500:kmax...         -0.095  ...  3.524
+zlns:order=gnn:beam=20:w=3:ii=1000:wi=1500:kmax...         -0.129  ...  3.549
+zlns:order=gnn:beam=20:w=3:ii=1000:wi=1500:kmax...         -0.055  ...  3.450
+zlns:order=gnn:beam=5:w=3:ii=1000:wi=1500:kmax=2           -0.086  ...  0.300
+zlns:order=ztsp:w=3:ii=1000:wi=1500:kmax=2:g=50...         -0.105  ...  3.163
+
+[13 rows x 5 columns]

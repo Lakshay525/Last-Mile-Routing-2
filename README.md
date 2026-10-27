@@ -1,10 +1,10 @@
 # Last-mile routing: SA vs LNS, zone-wise vs whole-route, and GNN warm starts
 
-> **Branch `zone-lns` (new work):** plain LNS and zone-specific LNS (GNN-predicted zone order, overlapping zone windows),
-> zone-crossing penalty, OR-Tools baseline, service-time / time-window metrics.
-> Method definitions and mathematics: [docs/METHODS.md](docs/METHODS.md). Results with every number traced to a CSV:
-> [docs/RESULTS.md](docs/RESULTS.md). Run anything with `python scripts/run_specs.py --out results/x.csv <method specs>`
-> (spec syntax in `src/lmr/methods.py`). LKH3 and the financial-cost metric are not included yet.
+> **Branch `zone-lns` (new work):** plain LNS (approach 2), zonal LNS (approach 1: zone order, then overlapping zone windows) and zonal SA (approach 3),
+> a zone-change penalty, a soft zone-order penalty, a reference-route / GNN zone order, OR-Tools baselines (routing solver, CP-SAT, MIP), the challenge's official score
+> and a comparison with the published results on the 1,107 High+Delivered routes. Definitions and mathematics: [docs/METHODS.md](docs/METHODS.md).
+> Results (every number generated from `results/*.csv`): [docs/RESULTS.md](docs/RESULTS.md). Reproduce: `scripts/run_final.sh`.
+> Missing from this branch: LKH3, the financial-cost metric (no cost parameters provided), a validated time-window metric.
 
 
 Deakin University research project on the last-mile routing problem, using the Amazon Last Mile Routing

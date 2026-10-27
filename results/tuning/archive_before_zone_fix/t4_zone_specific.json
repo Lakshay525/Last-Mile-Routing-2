@@ -1,0 +1,30 @@
+{
+  "specs": [
+    "driver",
+    "lns:i=5000:kmax=2",
+    "zlns:order=ztsp:w=3:ii=1000:wi=1500:kmax=2",
+    "zlns:order=ztsp:w=3:ii=1000:wi=1500:kmax=2:g=5000",
+    "zlns:order=ztsp:w=2:ii=1000:wi=1500:kmax=2:g=5000",
+    "zlns:order=ztsp:w=4:ii=1000:wi=1500:kmax=2:g=5000",
+    "zlns:order=greedy:w=3:ii=1000:wi=1500:kmax=2:g=5000",
+    "zlns:order=gnn:beam=20:w=3:ii=1000:wi=1500:kmax=2:g=5000",
+    "zlns:order=driver:w=3:ii=1000:wi=1500:kmax=2:g=5000",
+    "zlns:order=driver:w=3:ii=1000:wi=1500:kmax=2",
+    "zlns:order=ztsp:w=3:ii=1000:wi=1500:kmax=2:g=5000:s=2",
+    "lns:i=5000:kmax=2:l=60",
+    "zlns:order=ztsp:w=3:ii=1000:wi=1500:kmax=2:g=5000:l=60",
+    "zlns:order=gnn:beam=20:w=3:ii=1000:wi=1500:kmax=2:g=5000:l=60"
+  ],
+  "n_routes": 3000,
+  "limit": 60,
+  "split": "val",
+  "workers": 10,
+  "zone_model": "results/zone_gnn.pt",
+  "seed": 0,
+  "no_packages": true,
+  "out": "results/tuning/t4_zone_specific.csv",
+  "commit": "cbefa55",
+  "date": "2026-10-26",
+  "n_routes_evaluated": 60,
+  "wall_seconds": 233
+}

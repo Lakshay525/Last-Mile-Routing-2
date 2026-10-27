@@ -1,0 +1,33 @@
+{
+  "specs": [
+    "driver",
+    "nn",
+    "random:k=0",
+    "random:k=1",
+    "random:k=2",
+    "random:k=3",
+    "random:k=4",
+    "random:k=5",
+    "random:k=6",
+    "random:k=7",
+    "random:k=8",
+    "random:k=9",
+    "lns:i=5000:kmax=2:cl=1",
+    "lns:i=15000:kmax=2:cl=1",
+    "lns:i=5000:kmax=2:cl=1:l=3000",
+    "lns:i=15000:kmax=2:cl=1:l=30000"
+  ],
+  "n_routes": 6112,
+  "limit": null,
+  "split": "all",
+  "subset": "high_delivered",
+  "workers": 8,
+  "zone_model": null,
+  "seed": 0,
+  "no_packages": false,
+  "out": "results/exp30_literature.csv",
+  "commit": "cbefa55",
+  "date": "2026-10-26",
+  "n_routes_evaluated": 1107,
+  "wall_seconds": 3073
+}

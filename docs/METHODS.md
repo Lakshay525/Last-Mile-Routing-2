@@ -106,12 +106,19 @@ quality of the zone order therefore limits what the method can reach.
 * **driver (oracle):** the order in which the driver first entered each zone. **Not a deployable method**; it is an
   upper bound on what any zone-order model could contribute.
 * **random:** a random permutation of the zones (sanity check; should be clearly worse).
-* **gnn:** the learned model of section 6.
+* **ref (reference route; from Cook, Held & Helsgaun 2022, section 4.5):** among the training routes of the same depot (never the route
+  itself; the training split only), take the one that maximises `w(Q) · |zones(Q) ∩ zones(R)|` with `w` = 2 / 1.5 / 1 for driver quality High /
+  Medium / Low, and follow the order in which that route's driver first entered the zones the two routes share. Zones of R that the reference
+  never visited are inserted one at a time (largest first) at the position that adds the least zone-to-zone travel time.
+* **gnn:** the learned model of section 6, optionally given the reference route's order as input (section 6).
 
 ## 6. Zone-order GNN (learned part of approach 1)
 
-**Graph.** Per route, node 0 is the depot and nodes `1..Z` are zones. Zone IDs are *not* used as features because
-they are too sparse (6,400 distinct IDs in 1,000 routes); the model sees geometry and travel times.
+**Graph.** Per route, node 0 is the depot and nodes `1..Z` are zones. Zone IDs themselves are not features (too sparse: 6,400 distinct IDs in
+1,000 routes); the model sees geometry and travel times, and optionally the order of the best reference route (below).
+
+**Missing zone IDs.** 0.7% of stops (in 42% of routes) have no zone ID in the data. Each takes the zone of the nearest stop of the same route
+(Euclidean on latitude and longitude); the paper does the same but searches the stops of the same depot over all routes.
 
 * Node features (13): normalised centroid coordinates (2); mean/min/max of the zone's outgoing and incoming
   normalised zone-to-zone travel times (6); travel time from and to the depot (2); distance to the route centroid (1);
@@ -125,6 +132,12 @@ they are too sparse (6,400 distinct IDs in 1,000 routes); the model sees geometr
 `s_ij^h = a_hᵀ LeakyReLU( W_l x_i + W_r x_j + W_e e_ij )`, `α_ij^h = softmax_j(s_ij^h)`,
 `m_i = Σ_j α_ij W_r x_j`, `x_i' = LayerNorm( x_i + Dropout( ELU( W_o m_i ) ) )` (4 heads, width 64).
 
+**Reference-route features (variant "GNN + reference").** Node features gain three entries: whether the best reference route visited the zone,
+its relative rank among the shared zones (0 to 1), and the share of the route's zones the reference covers; edge features gain one entry:
++1 / −1 if the reference visited the row zone before / after the column zone, 0 otherwise. The model can then follow the reference where
+it has evidence and fall back on geometry for the zones the reference never visited. Training and evaluation use the leave-one-out
+reference of section 5.
+
 **Decoder (pointer network).** A GRU keeps state `g_t = GRU([x_{c_t}; x̄], g_{t−1})` where `c_t` is the current node and
 `x̄` the mean embedding. Logit for candidate `j`: `u_j = 10·tanh( (W_q g_t)·(W_k x_j) / √d ) − β·M̃[c_t][j]`
 (`β` learned), visited nodes masked, `p(j) = softmax(u)`. A route over zones is built node by node.
@@ -134,8 +147,9 @@ averaged per step; Adam, learning rate 3·10⁻⁴, batch 16, early stopping on 
 predicted and the driver's zone order. **No reinforcement learning is used** (REINFORCE was unstable on whole
 routes, see `README.md`). Decoding is greedy.
 
-Training routes are the train part of a 3,000-route sample; validation is its validation part; the evaluation
-routes are the 207 test routes (the split is decided by an MD5 hash of the route ID, so no route is in two parts).
+Training routes are the train part of all 6,112 routes (3,691 routes), validation is its validation part (1,213 routes) and early stopping uses the
+validation teacher-forced next-zone accuracy; the evaluation routes are the 207 test routes (the split is decided by an MD5 hash of the route ID,
+so no route is in two parts). Reference routes are drawn from the training part only.
 
 ## 7. OR-Tools baseline (the baseline we aim to beat)
 
@@ -161,3 +175,71 @@ it is the stronger reference and remains future work.
 * Run time: wall-clock seconds per route inside a worker process. Runs were executed with several worker processes in
   parallel, so absolute seconds are approximate; clean single-process timings are reported separately.
 * Financial cost is **not** reported: the cost parameters were not provided.
+
+---
+
+# Additions (second iteration)
+
+## 9. Compiled LNS engine and tuned neighbourhood size
+
+The LNS of section 3 is re-implemented in compiled code (numba; `src/lmr/fastlns.py`) with the same destroy and repair
+operators, acceptance rule and adaptive weights. It runs 25–65× faster at the same number of iterations (about 0.05 s
+for 1,500 iterations on a 150-stop route against about 1.2 s in Python). The Python engine remains as a fallback
+(`LMR_ENGINE=py`); the random streams differ, so results agree in distribution, not run for run.
+
+**Tuning (validation routes only, never the test routes).** The parameters were varied one at a time on 60 validation
+routes. The number of removed stops is `k ~ Uniform{ max(2, ⌊m/kmin⌋), …, max(3, ⌊m/kmax⌋) }`. The original setting was
+`kmin = 40, kmax = 8` (k up to about 18 of 150 stops). The only parameter that mattered was `kmax`: **`kmax = 2`** (up to
+about half of the stops removed in one iteration) was better by about 1.4 points of travel time at equal run time. The
+starting temperature `t0` (0.005–0.05), the end temperature, and `kmin` made no measurable difference. The chosen
+setting is `i = 5000` iterations, `kmax = 2` (everything else unchanged). A 2-opt / Or-opt local-search polish after
+LNS (`fastlns.local_search_nb`) was also tested; it adds +0.03 to +0.1 points and is optional (`pol=1`).
+
+## 10. Simulated annealing (third approach)
+
+Compiled SA on a path with the objective `Σ C` (same matrix C, same fixed endpoints as LNS). One iteration proposes
+one move: **2-opt** segment reversal (probability 0.4), **Or-opt** relocation of a segment of 1–3 stops (0.4) or a
+**swap** of two stops (0.2). With `Δ` the change in cost, the move is accepted if `Δ < 0` or with probability
+`exp(−Δ / τ)`. The temperature falls geometrically from `τ₀ = t0 · J(p₀) / n` to `tf` over the run
+(`t0 = 0.05` by default, `tf = 0.001`; `t0` was tuned on validation routes, see `RESULTS.md`). For an asymmetric
+matrix a reversal changes the cost of the reversed segment, so the 2-opt delta is computed from both directions of
+every edge in the segment.
+
+**Zonal SA.** The zone-specific pipeline of section 4 with SA as the optimiser inside each zone and each window
+(spec `zsa:`); `ii` and `wi` are then numbers of SA iterations (SA iterations are about 100× cheaper than LNS ones).
+
+## 11. Beam search for the zone order, and a soft order constraint
+
+* **Beam search.** Greedy decoding of the pointer network takes the most likely next zone at every step, so one early
+  mistake changes everything after it. Beam search keeps the `B` most probable partial sequences at every step and
+  returns the sequence with the highest total log-probability (`B = 1` is greedy decoding).
+* **Order penalty ρ.** For a zone order ω with rank `rank(z)`, add `ρ · 1[ rank(z(i)) > rank(z(j)) ]` to `C[i][j]`: every
+  edge that goes back to an earlier zone costs ρ seconds. With the zone-specific pipeline it keeps the order as a
+  soft constraint (ρ = 0: no constraint; ρ large: strict order).
+
+## 12. Closed tours and the official challenge score (comparison with the literature)
+
+* **Closed tour.** The literature compares *tours* that return to the depot. `cl=1` solves the closed problem by adding
+  a copy of the depot as a fixed last node (`T[i, depot copy] = T[i, 0]`, `T[depot copy, ·] = T[0, ·]`).
+* **High+Delivered test set.** The 1,107 routes rated "High" with no `DELIVERY_ATTEMPTED` package (this definition
+  reproduces the paper's count of 1,107 exactly; requiring every package `DELIVERED` would give 1,102).
+* **Official score**, re-implemented from the public scoring code of the challenge (MIT-CAVE/rc-cli,
+  `scoring/score.py`; the code was read, not copied). For the driver sequence `A` and a proposed sequence `B` on the same
+  `n` stops (depot at both ends of each list):
+  `SD(A,B) = 2 / (n(n−1)) · Σ_k ( |pos_A(B_{k+1}) − pos_A(B_k)| − 1 )` over the interior stops;
+  the travel-time matrix is z-scored over all its entries and shifted so the minimum is 0 (equivalently `T / std(T)`);
+  `ERP` is the edit distance between the two full lists with substitution cost `nm[a][b]` (row from `A`, column from `B`),
+  gap cost `g = 1000`, ties broken in favour of the substitution/match; `ERP_per_edit = ERP / (number of edit
+  operations)` (0 if none); **score = SD × ERP_per_edit**. Lower is better; the driver's own order scores 0.
+  `docs/RESULTS.md` compares this implementation with the paper's published scores.
+
+## 13. OR-Tools solvers compared (CP-SAT, MIP, routing)
+
+* **Routing solver** (section 7): guided local search over OR-Tools' vehicle-routing model.
+* **CP-SAT**: a Boolean variable per arc, `AddCircuit` (each node has one predecessor and one successor and the arcs form
+  a single cycle), objective `Σ cost · arc` with costs ×10 rounded to integers. The open path is closed through a dummy
+  node (stop → dummy at cost 0, dummy → depot forced). Optionally warm-started from an LNS route (`AddHint`). CP-SAT also
+  reports a proven lower bound.
+* **MIP**: the textbook compact formulation with Miller–Tucker–Zemlin order variables `u_i` and constraints
+  `u_i − u_j + n x_ij ≤ n − 1` to forbid subtours, solved by SCIP through OR-Tools' linear-solver wrapper.
+* `scripts/solver_study.py` runs them on small instances (first `k` stops of validation routes) and full routes.

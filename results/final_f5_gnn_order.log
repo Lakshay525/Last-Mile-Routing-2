@@ -1,0 +1,20 @@
+  103/1035 tasks  (21s)
+  206/1035 tasks  (35s)
+  309/1035 tasks  (47s)
+  412/1035 tasks  (60s)
+  515/1035 tasks  (73s)
+  618/1035 tasks  (84s)
+  721/1035 tasks  (95s)
+  824/1035 tasks  (106s)
+  927/1035 tasks  (119s)
+  1030/1035 tasks  (132s)
+  1035/1035 tasks  (133s)
+                                                    gap_vs_driver  ...   secs
+method                                                             ...       
+zlns:order=gnn:beam=1:w=3:ii=1000:wi=1500:kmax=...         -0.081  ...  0.210
+zlns:order=gnn:beam=20:w=3:ii=1000:wi=1500:kmax...         -0.096  ...  2.586
+zlns:order=gnn:beam=20:w=3:ii=1000:wi=1500:kmax...         -0.099  ...  0.461
+zlns:order=gnn:beam=20:w=3:ii=1000:wi=1500:kmax...         -0.082  ...  0.463
+zsa:order=gnn:beam=20:w=3:ii=50000:wi=300000:t0...         -0.084  ...  1.148
+
+[5 rows x 5 columns]

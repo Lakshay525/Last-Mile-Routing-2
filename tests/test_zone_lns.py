@@ -110,3 +110,72 @@ def test_plain_lns_with_lateness_penalty_is_valid():
     r.pkg = dict(service=np.full(n, 30.0), tw_start=np.full(n, np.nan), tw_end=np.full(n, np.nan))
     r.pkg["tw_end"][5] = 100.0
     assert valid(run_spec("lns:i=100:mu=3", r), n)
+
+
+def test_sa_engine_valid_and_not_worse_than_start():
+    from lmr.fastlns import sa_fast
+    r = toy_route(n=31, zones=5); C = penalised_matrix(r.T, r.zone, 20.0); init = nearest_neighbour_path(C)
+    for fe in (False, True):
+        s0 = init if not fe else [x for x in init if x != len(C) - 1] + [len(C) - 1]
+        p, c, _ = sa_fast(C, s0, 5000, 1, fe)
+        assert valid(p, len(C)) and (not fe or p[-1] == len(C) - 1)
+        assert c == pytest.approx(path_cost(C, p)) and c <= path_cost(C, s0) + 1e-9
+
+
+def test_sa_specs_are_valid():
+    r = toy_route(n=31, zones=5)
+    for spec in ["sa:i=3000:l=10", "zsa:order=greedy:w=2:l=10:ii=500:wi=1000", "lns:i=100:cl=1", "sa:i=3000:cl=1"]:
+        assert valid(run_spec(spec, r), len(r.T)), spec
+
+
+def test_fix_missing_zones_assigns_nearest_stops_zone():
+    from lmr.data import fix_missing_zones
+    xy = np.array([[0, 0], [0, 1], [0, 2], [5, 5], [0, 1.9]]); zone = np.array([-1, 0, 0, 1, -1])
+    out = fix_missing_zones(zone, xy)
+    assert out[0] == -1 and out[4] == 0 and (out[1:4] == zone[1:4]).all()      # depot untouched; stop 4 is nearest to stop 2 (zone 0)
+
+
+def test_official_score_is_zero_for_the_driver_and_matches_a_hand_computation():
+    from lmr.literature import official_score
+    T = np.array([[0, 5, 9, 4], [6, 0, 3, 8], [7, 2, 0, 5], [3, 9, 4, 0]], dtype=float)
+    assert official_score(T, [0, 1, 2, 3]) == 0.0
+    # proposed 0,2,1,3: interior positions in the driver's order are [1,0,2] -> sum(|diff|-1) = 1, SD = 2/(3*2) * 1 = 1/3
+    # edits: positions 1 and 2 differ (2 edits), cost = nm[1][2] + nm[2][1] with nm = T/std(T); ERP per edit = that / 2
+    nm = T / T.std()
+    expected = (1 / 3) * (nm[1, 2] + nm[2, 1]) / 2
+    assert official_score(T, [0, 2, 1, 3]) == pytest.approx(expected)
+
+
+def test_official_score_random_order_is_worse_than_a_small_change():
+    from lmr.literature import official_score
+    r = toy_route(n=41); rng = np.random.default_rng(3)
+    small = list(range(len(r.T))); small[5], small[6] = small[6], small[5]
+    rand = [0] + list(rng.permutation(np.arange(1, len(r.T))))
+    assert 0 < official_score(r.T, small) < official_score(r.T, rand)
+
+
+def test_reference_order_is_a_valid_zone_order():
+    from lmr.zoneplan import build_reference_index, order_reference, zone_members
+    train = [toy_route(seed=s) for s in range(1, 4)]
+    for i, q in enumerate(train): q.rid = f"q{i}"
+    idx = build_reference_index(train)
+    r = toy_route(seed=9); r.rid = "target"
+    o = order_reference(r, idx)
+    assert sorted(o) == sorted(zone_members(r.zone))
+
+
+def test_soft_order_penalty_keeps_routes_valid_and_reduces_backward_moves():
+    r = toy_route(n=61, zones=6); order = order_driver(r)
+    p0 = zone_window_lns(r.T, r.zone, order, 0, w=2, init_iters=50, win_iters=100, global_iters=500, rho=0)
+    p1 = zone_window_lns(r.T, r.zone, order, 0, w=2, init_iters=50, win_iters=100, global_iters=500, rho=1e5)
+    rank = {z: i for i, z in enumerate(order)}
+    back = lambda p: sum(rank[r.zone[b]] < rank[r.zone[a]] for a, b in zip(p[1:-1], p[2:]))
+    assert valid(p0, len(r.T)) and valid(p1, len(r.T)) and back(p1) <= back(p0) and back(p1) == 0
+
+
+def test_closed_tour_includes_the_return_leg():
+    from lmr.literature import closed_time
+    r = toy_route(n=31)
+    p = run_spec("lns:i=300:cl=1", r)
+    # the closed-tour search starts from the nearest-neighbour tour and keeps its best, so it can never end worse than it
+    assert valid(p, len(r.T)) and closed_time(r.T, p) <= closed_time(r.T, nearest_neighbour_path(r.T)) + 1e-6

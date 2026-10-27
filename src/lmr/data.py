@@ -16,6 +16,19 @@ def iter_travel_times(path, wanted=None):
             if wanted is None or rid in wanted:
                 yield rid, mat
 
+def fix_missing_zones(zone, xy):
+    """Stops without a zone ID (zone == -1, excluding the depot at index 0) take the zone of the nearest stop (Euclidean
+    on latitude/longitude) that has one, as in the challenge winners' paper. About 0.7% of stops, in 42% of routes.
+    Deviation from the paper: the nearest stop is searched within the same route (the paper searches the training
+    data of the same depot)."""
+    zone = np.array(zone, copy=True); xy = np.asarray(xy)
+    missing = np.where(zone[1:] == -1)[0] + 1; have = np.where(zone[1:] != -1)[0] + 1
+    if len(missing) and len(have):
+        d = np.linalg.norm(xy[missing][:, None, :] - xy[have][None, :, :], axis=-1)
+        zone[missing] = zone[have[d.argmin(1)]]
+    return zone
+
+
 def build_route(rid, meta, seq, mat):
     """Index 0 = station; the driver's actual order becomes arange(n)."""
     stops = meta["stops"]
@@ -24,7 +37,7 @@ def build_route(rid, meta, seq, mat):
     xy = np.array([[stops[s]["lat"], stops[s]["lng"]] for s in ids], dtype=float)
     zid = lambda s: stops[s]["zone_id"] if isinstance(stops[s]["zone_id"], str) else None  # station = NaN
     znames = sorted({zid(s) for s in ids if zid(s)}); zmap = {z: i for i, z in enumerate(znames)}
-    zone = np.array([zmap.get(zid(s), -1) for s in ids])
+    zone = fix_missing_zones(np.array([zmap.get(zid(s), -1) for s in ids]), xy)
     T = np.array([[float(mat[a][b]) for b in ids] for a in ids], dtype=np.float64)   # ijson gives Decimal
     actual = np.arange(len(ids)) if seq is not None else np.zeros(0, int)
     return Route(rid, ids, xy, zone, znames, T, actual, meta.get("route_score"), meta.get("station_code"))

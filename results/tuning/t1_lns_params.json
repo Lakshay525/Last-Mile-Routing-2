@@ -1,0 +1,30 @@
+{
+  "specs": [
+    "driver",
+    "lns:i=1500",
+    "lns:i=5000",
+    "lns:i=15000",
+    "lns:i=50000",
+    "lns:i=150000",
+    "lns:i=15000:kmax=4",
+    "lns:i=15000:kmax=16",
+    "lns:i=15000:kmin=20",
+    "lns:i=15000:kmin=80",
+    "lns:i=15000:t0=0.005",
+    "lns:i=15000:t0=0.05",
+    "lns:i=15000:tf=0.001",
+    "lns:i=15000:tf=0.1"
+  ],
+  "n_routes": 3000,
+  "limit": 60,
+  "split": "val",
+  "workers": 10,
+  "zone_model": null,
+  "seed": 0,
+  "no_packages": true,
+  "out": "results/tuning/t1_lns_params.csv",
+  "commit": "cbefa55",
+  "date": "2026-10-26",
+  "n_routes_evaluated": 60,
+  "wall_seconds": 142
+}

@@ -1,0 +1,22 @@
+  16/160 tasks  (36s)
+  32/160 tasks  (67s)
+  48/160 tasks  (99s)
+  64/160 tasks  (135s)
+  80/160 tasks  (168s)
+  96/160 tasks  (202s)
+  112/160 tasks  (234s)
+  128/160 tasks  (266s)
+  144/160 tasks  (299s)
+  160/160 tasks  (330s)
+                                                   gap_vs_driver  ...    secs
+method                                                            ...        
+lns:i=5000:kmax=2                                         -0.132  ...   1.983
+ortools:t=10                                              -0.091  ...  10.099
+ortools:t=2                                               -0.083  ...   2.002
+sa:i=5000000:t0=0.5                                       -0.110  ...   0.857
+zlns:order=gnn:beam=20:w=3:ii=1000:wi=1500:kmax=2         -0.093  ...   0.346
+zlns:order=ref:w=3:ii=1000:wi=1500:kmax=2                 -0.091  ...   0.144
+zlns:order=ztsp:w=3:ii=1000:wi=1500:kmax=2                -0.099  ...   0.146
+zsa:order=ztsp:w=3:ii=50000:wi=300000:t0=0.5              -0.099  ...   0.719
+
+[8 rows x 5 columns]

@@ -1,0 +1,30 @@
+  310/3105 tasks  (76s)
+  620/3105 tasks  (122s)
+  930/3105 tasks  (184s)
+  1240/3105 tasks  (251s)
+  1550/3105 tasks  (320s)
+  1860/3105 tasks  (371s)
+  2170/3105 tasks  (439s)
+  2480/3105 tasks  (496s)
+  2790/3105 tasks  (571s)
+  3100/3105 tasks  (630s)
+  3105/3105 tasks  (631s)
+                                                    gap_vs_driver  ...   secs
+method                                                             ...       
+driver                                                      0.000  ...  0.000
+sa:i=5000000:t0=0.5:l=0                                    -0.123  ...  1.494
+sa:i=5000000:t0=0.5:l=60                                   -0.104  ...  1.497
+zlns:order=driver:w=3:ii=1000:wi=1500:kmax=2:l=0           -0.083  ...  0.236
+zlns:order=driver:w=3:ii=1000:wi=1500:kmax=2:l=60          -0.065  ...  0.237
+zlns:order=greedy:w=3:ii=1000:wi=1500:kmax=2:l=0           -0.080  ...  0.251
+zlns:order=greedy:w=3:ii=1000:wi=1500:kmax=2:l=60          -0.063  ...  0.248
+zlns:order=ztsp:w=3:ii=1000:wi=1500:kmax=2:l=0             -0.103  ...  0.264
+zlns:order=ztsp:w=3:ii=1000:wi=1500:kmax=2:l=60            -0.086  ...  0.263
+zsa:order=driver:w=3:ii=50000:wi=300000:t0=0.5:l=0         -0.084  ...  1.253
+zsa:order=driver:w=3:ii=50000:wi=300000:t0=0.5:...         -0.067  ...  1.253
+zsa:order=greedy:w=3:ii=50000:wi=300000:t0=0.5:l=0         -0.081  ...  1.260
+zsa:order=greedy:w=3:ii=50000:wi=300000:t0=0.5:...         -0.065  ...  1.259
+zsa:order=ztsp:w=3:ii=50000:wi=300000:t0=0.5:l=0           -0.103  ...  1.277
+zsa:order=ztsp:w=3:ii=50000:wi=300000:t0=0.5:l=60          -0.086  ...  1.273
+
+[15 rows x 5 columns]

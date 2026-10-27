@@ -1,0 +1,29 @@
+{
+  "specs": [
+    "driver",
+    "lns:i=5000:kmax=2",
+    "zlns:order=driver:w=3:ii=1000:wi=1500:kmax=2",
+    "zlns:order=driver:w=3:ii=1000:wi=1500:kmax=2:g=5000:rho=30",
+    "zlns:order=driver:w=3:ii=1000:wi=1500:kmax=2:g=5000:rho=100",
+    "zlns:order=driver:w=3:ii=1000:wi=1500:kmax=2:g=5000:rho=300",
+    "zlns:order=gnn:beam=20:w=3:ii=1000:wi=1500:kmax=2",
+    "zlns:order=gnn:beam=20:w=3:ii=1000:wi=1500:kmax=2:g=5000:rho=30",
+    "zlns:order=gnn:beam=20:w=3:ii=1000:wi=1500:kmax=2:g=5000:rho=100",
+    "zlns:order=gnn:beam=20:w=3:ii=1000:wi=1500:kmax=2:g=5000:rho=300",
+    "zlns:order=ztsp:w=3:ii=1000:wi=1500:kmax=2:g=5000:rho=100",
+    "zlns:order=gnn:beam=1:w=3:ii=1000:wi=1500:kmax=2",
+    "zlns:order=gnn:beam=5:w=3:ii=1000:wi=1500:kmax=2"
+  ],
+  "n_routes": 3000,
+  "limit": 60,
+  "split": "val",
+  "workers": 10,
+  "zone_model": "results/zone_gnn.pt",
+  "seed": 0,
+  "no_packages": true,
+  "out": "results/tuning/t5_order_penalty.csv",
+  "commit": "cbefa55",
+  "date": "2026-10-26",
+  "n_routes_evaluated": 60,
+  "wall_seconds": 177
+}

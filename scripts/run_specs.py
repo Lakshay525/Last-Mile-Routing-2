@@ -13,7 +13,8 @@ if __name__ == "__main__":
     ap.add_argument("specs", nargs="+")
     ap.add_argument("--n-routes", type=int, default=1000, help="size of the sampled pool the split is taken from")
     ap.add_argument("--limit", type=int, default=None, help="use only the first N routes of the chosen split")
-    ap.add_argument("--split", default="test", choices=["train", "val", "test"])
+    ap.add_argument("--split", default="test", choices=["train", "val", "test", "all"])
+    ap.add_argument("--subset", default=None, choices=["high_delivered"], help="restrict to the literature test set (1,107 routes)")
     ap.add_argument("--workers", type=int, default=10)
     ap.add_argument("--zone-model", default=None, help="checkpoint of the zone-order GNN (needed for order=gnn)")
     ap.add_argument("--seed", type=int, default=0)
@@ -22,7 +23,11 @@ if __name__ == "__main__":
     a = ap.parse_args()
 
     tr, va, te = split(load_routes(a.n_routes, 0))
-    routes = {"train": tr, "val": va, "test": te}[a.split][: a.limit]
+    routes = {"train": tr, "val": va, "test": te, "all": tr + va + te}[a.split]
+    if a.subset:
+        from lmr.literature import high_delivered_ids
+        keep = high_delivered_ids(); routes = [r for r in routes if r.rid in keep]
+    routes = routes[: a.limit]
     if not a.no_packages:                      # service times + time windows, used as evaluation metrics only
         from lmr.packages import attach_package_info
         attach_package_info(routes)

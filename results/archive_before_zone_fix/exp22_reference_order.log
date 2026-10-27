@@ -1,0 +1,25 @@
+multiprocessing.pool.RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "C:\Users\ASUS\AppData\Local\Python\pythoncore-3.14-64\Lib\multiprocessing\pool.py", line 125, in worker
+    result = (True, func(*args, **kwds))
+                    ~~~~^^^^^^^^^^^^^^^
+  File "D:\Deakin University\last-mile-routing-v2\src\lmr\runner.py", line 16, in _task
+    row = route_metrics(r, p); row.update(method=spec, secs=dt, seed=seed)
+  File "D:\Deakin University\last-mile-routing-v2\src\lmr\evaluate.py", line 35, in route_metrics
+    assert sorted(p) == list(range(len(r.T))) and p[0] == 0, "invalid route"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: invalid route
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Deakin University\last-mile-routing-v2\scripts\run_specs.py", line 35, in <module>
+    df = run_parallel(routes, a.specs, a.workers, a.zone_model, a.seed)
+  File "D:\Deakin University\last-mile-routing-v2\src\lmr\runner.py", line 24, in run_parallel
+    for k, row in enumerate(pool.imap_unordered(_task, tasks, chunksize=1), 1):
+                  ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ASUS\AppData\Local\Python\pythoncore-3.14-64\Lib\multiprocessing\pool.py", line 873, in next
+    raise value
+AssertionError: invalid route

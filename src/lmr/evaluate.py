@@ -35,11 +35,13 @@ def route_metrics(r, p):
     assert sorted(p) == list(range(len(r.T))) and p[0] == 0, "invalid route"
     c = cost(r.T, p); base = cost(r.T, r.actual); nz = len(r.zone_names); zsw = zone_switches(r.zone, p)
     from .packages import time_metrics
+    from .literature import official_score, closed_time
     return dict(route=r.rid, station=r.station, score=r.score, n=len(p), n_zones=nz,
                 travel_time=c, driver_time=base, gap_vs_driver=c / base - 1,
                 zone_sw=zsw, zone_blocks_per_zone=(zsw + 1) / nz,
                 sim_to_driver=similarity(p), zone_order_sim=zone_order_similarity(r, p),
-                **time_metrics(r, p))
+                closed_time=closed_time(r.T, p), driver_closed_time=closed_time(r.T, r.actual),
+                official_score=official_score(r.T, p, r.actual), **time_metrics(r, p))
 
 
 def run_experiment(routes, methods):

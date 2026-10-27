@@ -1,0 +1,22 @@
+{
+  "specs": [
+    "zlns:order=gnn:beam=20:w=3:ii=1000:wi=1500:kmax=2:l=0",
+    "zlns:order=gnn:beam=20:w=3:ii=1000:wi=1500:kmax=2:l=60",
+    "zlns:order=gnn:beam=1:w=3:ii=1000:wi=1500:kmax=2:l=60",
+    "zsa:order=gnn:beam=20:w=3:ii=50000:wi=300000:t0=0.5:l=60",
+    "zlns:order=gnn:beam=20:w=3:ii=1000:wi=1500:kmax=2:g=5000:rho=100"
+  ],
+  "n_routes": 1000,
+  "limit": null,
+  "split": "test",
+  "subset": null,
+  "workers": 8,
+  "zone_model": "results/zone_gnn_ref.pt",
+  "seed": 0,
+  "no_packages": false,
+  "out": "results/final_f5_gnn_order.csv",
+  "commit": "cbefa55",
+  "date": "2026-10-27",
+  "n_routes_evaluated": 207,
+  "wall_seconds": 133
+}

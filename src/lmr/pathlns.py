@@ -81,8 +81,26 @@ def _repair(p, removed, C, kind, fixed_end):
     return p
 
 
-def lns_path(T, C, zone, init, iters=800, seed=0, fixed_end=False, adaptive=True, sa_accept=True, extra=None):
-    """Adaptive LNS on a path. Returns (best_path as list, best_cost under C, operator weights).
+def engine():
+    """'numba' (compiled, default when numba is installed) or 'py' (pure Python; force with LMR_ENGINE=py)."""
+    import os
+    from .fastlns import HAVE_NUMBA
+    return "numba" if HAVE_NUMBA and os.environ.get("LMR_ENGINE", "numba") != "py" else "py"
+
+
+def lns_path(T, C, zone, init, iters=800, seed=0, fixed_end=False, adaptive=True, sa_accept=True, extra=None, tw=None, **kw):
+    """Dispatcher: compiled engine if available, else the pure-Python one. tw = (service, tw_start, tw_end, mu)
+    is the lateness penalty for the compiled engine; `extra` (a Python callable) is only used by the Python engine."""
+    if engine() == "numba" and extra is None and adaptive and sa_accept:
+        from .fastlns import lns_fast
+        return lns_fast(T, C, zone, init, iters, seed, fixed_end, tw, **kw)
+    if extra is None and tw is not None:
+        extra = lateness_penalty(T, dict(service=np.asarray(tw[0]), tw_start=np.asarray(tw[1]), tw_end=np.asarray(tw[2])), tw[3])
+    return lns_path_py(T, C, zone, init, iters, seed, fixed_end, adaptive, sa_accept, extra)
+
+
+def lns_path_py(T, C, zone, init, iters=800, seed=0, fixed_end=False, adaptive=True, sa_accept=True, extra=None):
+    """Adaptive LNS on a path (pure Python). Returns (best_path as list, best_cost under C, operator weights).
     T is used only to measure how 'related' two nodes are; the objective is C (+ extra(path) if given,
     e.g. a lateness penalty; it is used only to accept or reject a move, not to choose insertion positions)."""
     rng = random.Random(seed)
@@ -128,10 +146,36 @@ def lateness_penalty(T, pkg, mu):
     return extra
 
 
-def plain_lns(T, zone, lam=0.0, iters=1500, seed=0, init=None, pkg=None, mu=0.0):
+def plain_lns(T, zone, lam=0.0, iters=1500, seed=0, init=None, pkg=None, mu=0.0, polish_final=False, closed=False, **kw):
     """Plain LNS on the whole route (the 'second approach'). Returns the route as a list.
     mu > 0 (needs pkg) adds a penalty of mu per second of time-window lateness when accepting moves."""
+    if closed:                                    # closed tour: depot -> stops -> back to the depot (literature's definition)
+        n = len(T); T2 = np.zeros((n + 1, n + 1)); T2[:n, :n] = T; T2[:n, n] = np.asarray(T)[:, 0]; T2[n, :n] = np.asarray(T)[0]
+        z2 = np.append(np.asarray(zone), -1)
+        C2 = penalised_matrix(T2, z2, lam); start = nearest_neighbour_path(C2[:n, :n]) if init is None else list(init)
+        path = lns_path(T2, C2, z2, start + [n], iters=iters, seed=seed, fixed_end=True, **kw)[0]
+        return path[:-1]
     C = penalised_matrix(T, zone, lam)
     init = nearest_neighbour_path(C) if init is None else list(init)
-    extra = lateness_penalty(T, pkg, mu) if mu > 0 else None
-    return lns_path(T, C, zone, init, iters=iters, seed=seed, extra=extra)[0]
+    tw = (pkg["service"], pkg["tw_start"], pkg["tw_end"], mu) if mu > 0 else None
+    route = lns_path(T, C, zone, init, iters=iters, seed=seed, tw=tw, **kw)[0]
+    if polish_final and engine() == "numba" and tw is None:      # local search ignores the lateness term
+        from .fastlns import polish
+        route = polish(C, route)
+    return route
+
+
+def sa_path(C, init, iters=500000, seed=0, fixed_end=False, **kw):
+    """Simulated annealing on a path (compiled engine in fastlns.sa_core; needs numba for useful speed)."""
+    from .fastlns import sa_fast
+    return sa_fast(C, init, iters, seed, fixed_end, **kw)
+
+
+def plain_sa(T, zone, lam=0.0, iters=1000000, seed=0, closed=False, **kw):
+    """Global simulated annealing on the whole route (same objective, cost matrix and tours as plain_lns)."""
+    if closed:
+        n = len(T); T2 = np.zeros((n + 1, n + 1)); T2[:n, :n] = T; T2[:n, n] = np.asarray(T)[:, 0]; T2[n, :n] = np.asarray(T)[0]
+        z2 = np.append(np.asarray(zone), -1); C2 = penalised_matrix(T2, z2, lam)
+        return sa_path(C2, nearest_neighbour_path(C2[:n, :n]) + [n], iters, seed, True, **kw)[0][:-1]
+    C = penalised_matrix(T, zone, lam)
+    return sa_path(C, nearest_neighbour_path(C), iters, seed, False, **kw)[0]
