@@ -38,14 +38,6 @@ travel-time matrix".
 order, 0 = unrelated, −1 = reversed).  **Zone-order similarity**: the same τ computed on the sequence in which the
 zones are *first entered* (needs `Z ≥ 2`).
 
-**Service times and time windows (evaluation only, never optimised).** For stop `i`: `s_i` = sum of the planned
-service seconds of its packages; `[a_i, b_i]` = the tightest time window among its packages (latest start, earliest
-end; undefined if no package has a window; about 63% of packages have none), in seconds after the route's departure.
-Timeline: `t₀ = 0`; for each next stop `j` after `i`: `t ← t + T[i][j]`; if `t < a_j` wait until `a_j`; if `t > b_j` the
-stop is **late** by `t − b_j`; then `t ← t + s_j`. We report route duration (`t` at the end: travel + service +
-waiting), number of late stops and total lateness. Service time does not depend on the order, so it does not change
-which route is best.
-
 ## 2. Nearest neighbour (baseline)
 
 From the current stop go to the unvisited stop with the smallest `T`. No search; used as a quick baseline and as
@@ -160,9 +152,6 @@ Search: first solution `PATH_CHEAPEST_ARC`, then `GUIDED_LOCAL_SEARCH` for `t` s
 (10 s unless stated). All other OR-Tools settings are the defaults; no tuning was done. Because the search is
 time-limited, its result depends on how busy the machine is, so OR-Tools runs were done with nothing else running.
 
-**LKH3 is not included.** It could not be installed with pip on this machine and the download was not authorised;
-it is the stronger reference and remains future work.
-
 ## 8. Evaluation protocol
 
 * Routes: the 207 test routes (hash bucket 80–99) of a 1,000-route sample of the 6,112 training routes.
@@ -174,7 +163,6 @@ it is the stronger reference and remains future work.
   difference is treated as real.
 * Run time: wall-clock seconds per route inside a worker process. Runs were executed with several worker processes in
   parallel, so absolute seconds are approximate; clean single-process timings are reported separately.
-* Financial cost is **not** reported: the cost parameters were not provided.
 
 ---
 

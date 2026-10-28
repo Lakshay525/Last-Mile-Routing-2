@@ -11,7 +11,7 @@ python scripts/build_ref_index.py                                   # reference 
 # F1: test routes (207), iteration-based => deterministic, can share the CPU
 S="driver nn"
 for L in 0 15 30 60 120; do S="$S $LNS:l=$L"; done
-S="$S $LNS:mu=5 $LNS:l=60:mu=5 $SA:l=0 $SA:l=60"
+S="$S $SA:l=0 $SA:l=60"
 for O in ztsp greedy driver ref; do for L in 0 60; do S="$S zlns:order=$O:$ZL:l=$L"; done; done
 for O in ztsp ref driver; do for L in 0 60; do S="$S zsa:order=$O:$ZS:l=$L"; done; done
 for R in 30 100 300; do S="$S zlns:order=ref:$ZL:g=5000:rho=$R"; done

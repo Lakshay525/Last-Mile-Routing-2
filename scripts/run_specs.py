@@ -18,7 +18,7 @@ if __name__ == "__main__":
     ap.add_argument("--workers", type=int, default=10)
     ap.add_argument("--zone-model", default=None, help="checkpoint of the zone-order GNN (needed for order=gnn)")
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--no-packages", action="store_true", help="skip service-time / time-window metrics")
+    ap.add_argument("--time-windows", action="store_true", help="also compute service-time / time-window metrics (off by default; not part of the reported results)")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
 
@@ -28,7 +28,7 @@ if __name__ == "__main__":
         from lmr.literature import high_delivered_ids
         keep = high_delivered_ids(); routes = [r for r in routes if r.rid in keep]
     routes = routes[: a.limit]
-    if not a.no_packages:                      # service times + time windows, used as evaluation metrics only
+    if a.time_windows:
         from lmr.packages import attach_package_info
         attach_package_info(routes)
     t0 = time.time()

@@ -1,151 +1,50 @@
-# Last-mile routing: SA vs LNS, zone-wise vs whole-route, and GNN warm starts
+# Last-mile routing: LNS, SA and zone-based methods on the Amazon Last Mile Routing Challenge data
 
-> **Branch `zone-lns` (new work):** plain LNS (approach 2), zonal LNS (approach 1: zone order, then overlapping zone windows) and zonal SA (approach 3),
-> a zone-change penalty, a soft zone-order penalty, a reference-route / GNN zone order, OR-Tools baselines (routing solver, CP-SAT, MIP), the challenge's official score
-> and a comparison with the published results on the 1,107 High+Delivered routes. Definitions and mathematics: [docs/METHODS.md](docs/METHODS.md).
-> Results (every number generated from `results/*.csv`): [docs/RESULTS.md](docs/RESULTS.md). Reproduce: `scripts/run_final.sh`.
-> Missing from this branch: LKH3, the financial-cost metric (no cost parameters provided), a validated time-window metric.
+Deakin University research project. We compare ways of ordering the ~150 delivery stops of a van route, judged against what the real driver did on the same route
+(Amazon Last Mile Routing Research Challenge 2021, 6,112 training routes and 3,052 evaluation routes with travel-time matrices, zone labels and the driver's order).
 
+## The three approaches (and the baseline)
+1. **Approach 1, zonal LNS:** choose the order of the delivery zones, solve each zone, then re-optimise overlapping windows of three zones with large neighbourhood search (LNS).
+2. **Approach 2, plain LNS:** one LNS over the whole route.
+3. **Approach 3, zonal SA:** approach 1 with simulated annealing (SA) as the optimiser. Global SA is reported too.
+4. **Baseline:** Google OR-Tools (routing solver; CP-SAT and MIP studied separately).
 
-Deakin University research project on the last-mile routing problem, using the Amazon Last Mile Routing
-Research Challenge 2021 data (Los Angeles, Seattle, Boston, Austin and Chicago stations; training set of 6,112 routes).
+Two optional "dials": a penalty λ (seconds) for every change of zone, and a penalty ρ for going back to an earlier zone of a given zone order.
+The zone order can come from simple rules, from the best-matching training route ("reference route"), or from a graph neural network (GNN).
 
-## Research questions
-1. Does large neighbourhood search (LNS) find shorter routes than simulated annealing (SA) at equal compute time?
-2. Is it better to plan a whole route at once, or one delivery zone at a time?
-3. Can a graph neural network (GNN) + pointer network help, either by building routes itself or by giving
-   SA/LNS a better starting route?
-4. (Open) Can the zone order be learned from drivers?
+## Headline results (207 held-out test routes, one random seed)
+Travel time = open-path travel time from the travel-time matrix, relative to the driver (negative = less). Official score = the challenge's score (0 = same order as the driver; lower is better).
 
-## What is measured
-All methods build a visiting order for one route's stops, starting at the depot. Each is compared with the order
-the real driver followed on the same route.
-
-| Metric | Meaning |
-|---|---|
-| `gap_vs_driver` | Route cost relative to the driver's route (-0.10 = 10% less driving time than the driver) |
-| `zone_sw` | Number of times consecutive stops belong to different zones |
-| `sim_to_driver` | Kendall tau between the method's stop order and the driver's order (1 = identical, 0 = unrelated) |
-| `zone_order_sim` | Kendall tau between the order in which zones are first entered, vs the driver |
-| `secs` | Planning time per route |
-
-**Cost** is the sum of the travel times between consecutive stops, taken from the challenge travel-time matrix
-(asymmetric: A to B can differ from B to A). The route is an open path from the depot, with no return leg.
-Service time at stops and time windows are **not** included (see Limitations).
-
-## Methods
-| Name | Description |
-|---|---|
-| `driver` | The real route (reference) |
-| `nn` | Nearest neighbour: always go to the closest unvisited stop |
-| `sa` | Simulated annealing: 2-opt, segment-move and swap changes, geometric cooling, 750,000 iterations |
-| `lns` | Adaptive large neighbourhood search: four removal rules (random, related, worst-detour, whole-zone), two repair rules (cheapest insertion, regret-2), operator weights learned online, 1,500 iterations |
-| `lns_static` | LNS without adaptive weights (ablation; not yet run at scale) |
-| `zone_sa` / `zone_lns` | Each delivery zone is solved as its own sub-problem, then the zones are joined (zones ordered greedily by travel time) |
-| `gnn` | GNN encoder (3 edge-aware GATv2 layers) + GRU pointer-network decoder |
-| `gnn_sa` / `gnn_lns` | SA or LNS started from the GNN's route instead of nearest-neighbour |
-
-## Data and split
-- 1,000 routes sampled from the training set (seed 0), split by an MD5 hash of the route ID into
-  60% train / 20% validation / 20% test. The split does not depend on how many routes are loaded,
-  so no route is ever in both training and test.
-- Results below use the **207 test routes**.
-- The dataset is not included. See [DATA.md](DATA.md).
-
-## Results
-
-### Classical methods (`results/exp01_classical.csv`, 207 test routes, seed 0)
-| method | gap vs driver | zone switches | similarity to driver | secs/route |
+| method | travel time vs driver | zone changes | official score | seconds/route* |
 |---|---|---|---|---|
-| driver | 0 | 21.9 | 1.00 | - |
-| lns | **-12.0%** | 35.8 | -0.01 | 13.1 |
-| sa | -10.0% | 37.4 | -0.01 | 14.2 |
-| nn | +2.2% | 40.9 | -0.01 | 0.0004 |
-| zone_lns | +0.8% | **19.7** | -0.01 | **0.29** |
-| zone_sa | +0.5% | 19.7 | -0.01 | 4.2 |
+| driver | 0 | 20.3 | 0 | – |
+| OR-Tools, 10 s | −10.38% | 35.8 | 0.0931 | 10.0 |
+| **plain LNS** | **−13.80%** | 33.0 | 0.0798 | 2.0 |
+| global SA | −12.30% | 34.5 | 0.0847 | 0.9 |
+| zonal LNS, zone-level routing order | −11.29% | 29.2 | 0.0688 | 0.15 |
+| zonal SA, zone-level routing order | −11.27% | 29.2 | 0.0697 | 0.7 |
+| zonal LNS, reference-route order | −9.64% | 28.9 | 0.0432 | 0.14 |
 
-Zone-order similarity to the driver, 207 test routes: `zone_lns` mean -0.034 (median -0.095),
-`nn` mean -0.010 (median -0.067); standard deviation about 0.48.
+With the zone-change penalty λ = 60 s: OR-Tools −9.37% / 0.0642; plain LNS −11.64% / 0.0580; zonal LNS with reference-route order −8.07% / **0.0349**; with a GNN order that also sees the reference route −8.18% / 0.0328.
+*Clean single-process timings on 20 routes (`results/final_f4_timing.csv`).
 
-### GNN (`results/gnn_v2.history.json`, validation set)
-Training cost is route length in units of the mean inter-stop travel time. References on validation:
-nearest-neighbour 31.19, driver 30.54.
+Everything, with confidence intervals and the comparison with the published results (Cook, Held & Helsgaun 2022): **[docs/RESULTS.md](docs/RESULTS.md)**. Definitions and mathematics: **[docs/METHODS.md](docs/METHODS.md)**.
 
-| Phase | Epochs | Validation cost | Similarity to driver |
-|---|---|---|---|
-| Imitation (copy the driver) | 0-2 | 31.91 to 32.95 | about 0.07 |
-| REINFORCE | 3-5 | 35.38 to 37.29 (diverged) | about 0.07 |
+## Layout
+```
+src/lmr/        data.py, pathlns.py (LNS), fastlns.py (compiled LNS/SA), zoneplan.py (zone orders, windows), zone_gnn.py, gnn.py,
+                methods.py (method specs), baselines.py (OR-Tools), literature.py (official score), evaluate.py, analysis.py
+scripts/        run_specs.py (any method on any routes, in parallel), run_final.sh (all final runs), train_zone_gnn.py,
+                solver_study.py, make_tables.py, make_figures.py
+results/        CSVs behind every number (see results/README.md); archive_before_zone_fix/ is not used
+tests/          38 tests (pytest)
+```
 
-The saved model is the end-of-imitation model (cost 32.95).
-
-### GNN as a warm start (`results/exp02_gnn.csv`, 62 test routes)
-| method | gap vs driver | zone switches | similarity | secs/route |
-|---|---|---|---|---|
-| driver | 0 | 22.1 | 1.00 | - |
-| lns | -12.4% | 36.9 | -0.01 | 11.6 |
-| gnn_lns | -12.5% | 36.1 | -0.01 | 11.5 |
-| sa | -10.4% | 38.2 | -0.02 | 12.1 |
-| gnn_sa | -10.8% | 37.2 | -0.01 | 11.8 |
-| nn | +1.7% | 41.4 | -0.03 | 0.0005 |
-| gnn | +8.8% | 44.0 | -0.02 | 0.07 |
-
-Paired differences (percentage points, mean ± 95% interval): gnn_sa − sa = −0.4 ± 0.6; gnn_lns − lns = −0.04 ± 0.5;
-lns − sa = −2.0 ± 0.5; gnn − nn = +7.1 ± 1.6.
-
-## Findings
-1. At about equal time (13-14 s per route), **LNS finds routes about 2 percentage points shorter than SA**
-   (-12.0% vs -10.0% relative to the driver).
-2. Both beat the real drivers on driving time. Plain nearest-neighbour is only 2.2% worse than the driver,
-   so the drivers are not optimising this travel-time matrix.
-3. Drivers are **zone-contiguous** (about 22 zone switches vs 36-41 for the unconstrained solvers).
-   Zone-wise planning is within 1% of the driver's cost, with about 20 zone switches, and `zone_lns` does it
-   in 0.29 s (about 45x faster than LNS). The price is giving up the 10-12% savings that LNS and SA find by crossing zones.
-4. **No method reproduces the driver's visiting order** (similarity about 0), including zone-wise planning.
-   The zone-order similarity is also about 0, so the mismatch includes *which zone is visited next*; the
-   greedy "nearest zone next" rule is not what drivers do.
-5. The GNN, trained by imitation, is about as long as nearest-neighbour or longer and only weakly
-   driver-like (similarity 0.07). REINFORCE training diverged and is unresolved.
-6. The GNN on its own builds routes about 9% longer than the driver's, worse than nearest-neighbour.
-   Used as a warm start it makes no measurable difference to SA or LNS (paired differences are within noise).
-   LNS beats SA by about 2 points on this second sample as well.
-
-## Reproduce
-```powershell
-pip install -e ".[gnn,dev]"
-$env:LMR_DATA_ROOT = "D:/path/to/almrrc2021"
-python scripts/run_experiment.py --n-routes 1000 --methods driver,nn,sa,lns,zone_sa,zone_lns --out results/exp01_classical.csv
-python scripts/train_gnn.py --n-routes 1000 --epochs 8 --out results/gnn_v2.pt
-python scripts/run_experiment.py --n-routes 300 --methods driver,nn,sa,lns,gnn,gnn_sa,gnn_lns --gnn results/gnn_v2.pt --out results/exp02_gnn.csv
+## Run
+```
+pip install -e ".[gnn,baselines,dev]" numba        # numba is optional but makes LNS/SA 25-65x faster
+export LMR_DATA_ROOT=/path/to/almrrc2021           # see DATA.md; the dataset is not in this repository
 pytest -q
+python scripts/run_specs.py --out results/demo.csv driver "lns:i=5000:kmax=2" "zlns:order=ztsp:w=3:ii=1000:wi=1500:kmax=2:l=60"
 ```
-Notebooks in `notebooks/` read the CSVs in `results/`: dataset overview (01), classical baselines (02),
-GNN (03), summary (04).
-
-## Repository layout
-```
-src/lmr/        data.py, solvers.py, gnn.py, evaluate.py, agents.py, config.py
-scripts/        run_experiment.py, train_gnn.py
-tests/          unit tests (pytest)
-notebooks/      analysis notebooks
-results/        experiment outputs (CSV, JSON, training histories)
-```
-
-## Limitations
-- **Driving time only.** Service time at stops, time windows and vehicle capacity are not modelled.
-  Routes that are shorter by this measure may break a delivery constraint.
-- **Single seed** for sampling and for the solvers; intervals across seeds are not yet reported.
-- **Timings are approximate.** Some runs shared the CPU with other jobs. Costs, zone switches and similarity are unaffected.
-- **Similarity** is a rank correlation over the full stop order, which penalises any local reordering.
-  The official challenge score (sequence deviation plus an edit-distance penalty) is not yet implemented.
-- **SA and LNS parameters are untuned** (temperatures, removal sizes).
-- **The GNN is unfinished:** small training set, REINFORCE unstable, saved model is the imitation-only version.
-- **Adaptive-LNS ablation** (`lns` vs `lns_static`) has not been run at scale; an earlier 40-route run showed no benefit.
-
-## Next steps
-- Learn the zone order from drivers, then plan inside zones with SA/LNS.
-- Add a zone-switch penalty to the SA/LNS objective and report the cost-vs-tidiness trade-off.
-- Debug REINFORCE on small instances, or train the GNN on LNS solutions instead of driver routes.
-- Add the official challenge score, service times and time windows.
-
-## Experiment log
-- 2026-10-22: Classical comparison at about equal time on 207 test routes; GNN imitation + REINFORCE trained (v2); GNN warm-start experiment running.
+A method is a spec string, e.g. `zlns:order=ref:w=3:l=60` (see `src/lmr/methods.py`).
