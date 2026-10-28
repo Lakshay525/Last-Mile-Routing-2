@@ -1,0 +1,13 @@
+lam,method,seeds,time_pct,zone_changes,score
+0,plain LNS,5,-13.80 +- 0.02,32.78 +- 0.19,0.0791 +- 0.0008
+0,plain SA,5,-12.28 +- 0.09,34.40 +- 0.06,0.0856 +- 0.0010
+0,zonal LNS (zone order: route-through-zones),5,-11.21 +- 0.07,29.14 +- 0.05,0.0691 +- 0.0006
+0,zonal LNS (zone order: past routes),5,-9.66 +- 0.02,28.91 +- 0.05,0.0432 +- 0.0000
+0,zonal SA (zone order: route-through-zones),5,-11.22 +- 0.06,29.39 +- 0.14,0.0702 +- 0.0007
+0,zonal SA (zone order: past routes),5,-9.74 +- 0.02,29.29 +- 0.10,0.0445 +- 0.0002
+60,plain LNS,5,-11.67 +- 0.02,21.35 +- 0.06,0.0583 +- 0.0005
+60,plain SA,5,-10.36 +- 0.09,22.00 +- 0.09,0.0630 +- 0.0008
+60,zonal LNS (zone order: route-through-zones),5,-9.57 +- 0.07,20.46 +- 0.01,0.0556 +- 0.0006
+60,zonal LNS (zone order: past routes),5,-8.07 +- 0.01,20.51 +- 0.01,0.0348 +- 0.0001
+60,zonal SA (zone order: route-through-zones),5,-9.70 +- 0.06,20.57 +- 0.03,0.0562 +- 0.0005
+60,zonal SA (zone order: past routes),5,-8.29 +- 0.01,20.57 +- 0.04,0.0358 +- 0.0002
