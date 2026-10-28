@@ -1,0 +1,17 @@
+routes,6112.0
+stations,17.0
+stops_mean,146.9919829842932
+stops_min,32.0
+stops_max,237.0
+zones_mean,20.03975785340314
+zones_min,4.0
+zones_max,47.0
+high,2718.0
+medium,3292.0
+low,102.0
+train,3691.0
+val,1213.0
+test_all,1208.0
+test_used,207.0
+test_stops,148.10628019323673
+test_zones,20.32850241545894
