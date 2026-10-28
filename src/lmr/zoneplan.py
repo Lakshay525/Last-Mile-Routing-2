@@ -67,7 +67,7 @@ def order_ztsp(T, zone, iters=300, seed=0):
 
 # ------------------------------------------------------------------ zone-specific LNS
 def zone_window_lns(T, zone, order, lam=0.0, w=2, sweeps=1, init_iters=200, win_iters=300, seed=0,
-                    kmax_div=None, global_iters=0, polish_final=False, rho=0.0, solver="lns", sa_kw=None):
+                    kmax_div=None, global_iters=0, polish_final=False, rho=0.0, solver="lns", sa_kw=None, levels=None):
     """Zone-specific LNS. w=1 -> windows are single zones (no overlap); w>=2 -> overlapping windows.
     kmax_div: neighbourhood size for the compiled engine (k_max = m // kmax_div); global_iters > 0 adds a final
     LNS pass over the whole route starting from the zone-window solution; polish_final adds 2-opt/Or-opt.
@@ -80,7 +80,7 @@ def zone_window_lns(T, zone, order, lam=0.0, w=2, sweeps=1, init_iters=200, win_
             return sa_path(Cm, init, iters, seed, fixed_end, **sa_kw)
     else:
         lns_path = _lns_path
-    zone = np.asarray(zone); C = penalised_matrix(T, zone, lam); members = zone_members(zone)
+    zone = np.asarray(zone); C = penalised_matrix(T, zone, lam, levels); members = zone_members(zone)
     if rho > 0:
         rank = np.full(len(zone), -1); rank[[i for z in order for i in members[z]]] = np.repeat(np.arange(len(order)), [len(members[z]) for z in order])
         C = C + float(rho) * (rank[:, None] > rank[None, :])

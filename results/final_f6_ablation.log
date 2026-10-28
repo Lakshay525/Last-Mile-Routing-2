@@ -1,0 +1,32 @@
+  351/3519 tasks  (14s)
+  702/3519 tasks  (24s)
+  1053/3519 tasks  (34s)
+  1404/3519 tasks  (44s)
+  1755/3519 tasks  (55s)
+  2106/3519 tasks  (65s)
+  2457/3519 tasks  (74s)
+  2808/3519 tasks  (84s)
+  3159/3519 tasks  (94s)
+  3510/3519 tasks  (104s)
+  3519/3519 tasks  (105s)
+                                                    gap_vs_driver  ...   secs
+method                                                             ...       
+driver                                                      0.000  ...  0.000
+zlns:order=ref:w=1:ii=1000:wi=1500:kmax=2:l=60             -0.054  ...  0.053
+zlns:order=ref:w=2:ii=1000:wi=1500:kmax=2:l=60             -0.072  ...  0.081
+zlns:order=ref:w=3:ii=1000:wi=1500:kmax=2:l=60             -0.081  ...  0.128
+zlns:order=ref:w=3:ii=1000:wi=1500:kmax=2:l=60:...         -0.116  ...  1.600
+zlns:order=ref:w=3:ii=1000:wi=1500:kmax=2:l=60:s=2         -0.082  ...  0.235
+zlns:order=ref:w=3:ii=1000:wi=1500:l=60                    -0.065  ...  0.051
+zlns:order=ref:w=3:ii=1000:wi=4500:kmax=2:l=60             -0.081  ...  0.338
+zlns:order=ref:w=3:ii=1000:wi=500:kmax=2:l=60              -0.080  ...  0.060
+zlns:order=ref:w=3:ii=300:wi=1500:kmax=2:l=60              -0.081  ...  0.120
+zlns:order=ref:w=4:ii=1000:wi=1500:kmax=2:l=60             -0.086  ...  0.200
+zlns:order=ref:w=5:ii=1000:wi=1500:kmax=2:l=60             -0.091  ...  0.279
+zlns:order=ztsp:w=1:ii=1000:wi=1500:kmax=2:l=60            -0.076  ...  0.054
+zlns:order=ztsp:w=2:ii=1000:wi=1500:kmax=2:l=60            -0.090  ...  0.084
+zlns:order=ztsp:w=3:ii=1000:wi=1500:kmax=2:l=60            -0.096  ...  0.133
+zlns:order=ztsp:w=4:ii=1000:wi=1500:kmax=2:l=60            -0.100  ...  0.204
+zlns:order=ztsp:w=5:ii=1000:wi=1500:kmax=2:l=60            -0.103  ...  0.288
+
+[17 rows x 5 columns]

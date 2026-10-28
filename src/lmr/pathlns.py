@@ -9,11 +9,15 @@ import math, random
 import numpy as np
 
 
-def penalised_matrix(T, zone, lam):
-    """C = T + lam * 1[zone(i) != zone(j)].  The depot (zone -1) differs from every stop, which adds
-    the same constant lam to every route, so it does not affect any comparison."""
+def penalised_matrix(T, zone, lam, levels=None):
+    """C = T + lam * 1[zone(i) != zone(j)] (+ w * 1[label(i) != label(j)] for every (label, w) in `levels`, the coarser
+    clusters of hierarchy.py).  The depot (label -1) differs from every stop, which adds the same constant to every
+    route, so it does not affect any comparison."""
     z = np.asarray(zone)
-    return np.asarray(T, dtype=np.float64) + float(lam) * (z[:, None] != z[None, :])
+    C = np.asarray(T, dtype=np.float64) + float(lam) * (z[:, None] != z[None, :])
+    for lab, w in (levels or []):
+        lab = np.asarray(lab); C = C + float(w) * (lab[:, None] != lab[None, :])
+    return C
 
 
 def path_cost(C, p):
@@ -146,7 +150,7 @@ def lateness_penalty(T, pkg, mu):
     return extra
 
 
-def plain_lns(T, zone, lam=0.0, iters=1500, seed=0, init=None, pkg=None, mu=0.0, polish_final=False, closed=False, **kw):
+def plain_lns(T, zone, lam=0.0, iters=1500, seed=0, init=None, pkg=None, mu=0.0, polish_final=False, closed=False, levels=None, **kw):
     """Plain LNS on the whole route (the 'second approach'). Returns the route as a list.
     mu > 0 (needs pkg) adds a penalty of mu per second of time-window lateness when accepting moves."""
     if closed:                                    # closed tour: depot -> stops -> back to the depot (literature's definition)
@@ -155,7 +159,7 @@ def plain_lns(T, zone, lam=0.0, iters=1500, seed=0, init=None, pkg=None, mu=0.0,
         C2 = penalised_matrix(T2, z2, lam); start = nearest_neighbour_path(C2[:n, :n]) if init is None else list(init)
         path = lns_path(T2, C2, z2, start + [n], iters=iters, seed=seed, fixed_end=True, **kw)[0]
         return path[:-1]
-    C = penalised_matrix(T, zone, lam)
+    C = penalised_matrix(T, zone, lam, levels)
     init = nearest_neighbour_path(C) if init is None else list(init)
     tw = (pkg["service"], pkg["tw_start"], pkg["tw_end"], mu) if mu > 0 else None
     route = lns_path(T, C, zone, init, iters=iters, seed=seed, tw=tw, **kw)[0]

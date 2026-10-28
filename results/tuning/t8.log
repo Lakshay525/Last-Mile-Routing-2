@@ -1,0 +1,26 @@
+  72/720 tasks  (9s)
+  144/720 tasks  (15s)
+  216/720 tasks  (23s)
+  288/720 tasks  (32s)
+  360/720 tasks  (43s)
+  432/720 tasks  (52s)
+  504/720 tasks  (61s)
+  576/720 tasks  (69s)
+  648/720 tasks  (79s)
+  720/720 tasks  (91s)
+                                                    gap_vs_driver  ...   secs
+method                                                             ...       
+driver                                                      0.000  ...  0.000
+lns:i=5000:kmax=2:l=0:hl=30                                -0.131  ...  1.176
+lns:i=5000:kmax=2:l=0:hl=60                                -0.120  ...  1.185
+lns:i=5000:kmax=2:l=30:hl=30                               -0.119  ...  1.212
+lns:i=5000:kmax=2:l=60                                     -0.119  ...  1.193
+lns:i=5000:kmax=2:l=60:hl=10                               -0.117  ...  1.196
+lns:i=5000:kmax=2:l=60:hl=30                               -0.113  ...  1.188
+lns:i=5000:kmax=2:l=60:hl=60                               -0.106  ...  1.194
+zlns:order=ref:w=3:ii=1000:wi=1500:kmax=2:l=60             -0.087  ...  0.108
+zlns:order=ref:w=3:ii=1000:wi=1500:kmax=2:l=60:...         -0.086  ...  0.110
+zlns:order=ref:w=3:ii=1000:wi=1500:kmax=2:l=60:...         -0.085  ...  0.111
+zlns:order=ref:w=3:ii=1000:wi=1500:kmax=2:l=60:...         -0.082  ...  0.112
+
+[12 rows x 5 columns]

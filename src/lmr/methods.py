@@ -12,6 +12,7 @@
                                     s = sweeps, ii = iterations per zone, wi = iterations per window,
                                     beam = beam width for order=gnn (1 = greedy decoding),
                                     rho = penalty (s) per edge going backwards in the zone order,
+                                    hl = extra penalty (s) per coarser zone-ID cluster level left (see hierarchy.py),
                                     kmax = neighbourhood size, g = iterations of a final global LNS pass, pol=1 polish
     ortools:t=10:l=0                OR-Tools guided local search, t seconds, same penalised objective
 """
@@ -57,6 +58,13 @@ def zone_order(r, name, seed=0, beam=1):
     raise ValueError(f"unknown zone order: {name}")
 
 
+def _levels(r, p):
+    """hl=w: leaving a coarser cluster of zone IDs (hierarchy.py) costs w seconds per level, on top of the zone penalty l."""
+    if float(p.get("hl", 0)) <= 0: return None
+    from .hierarchy import levels_for
+    return levels_for(r, float(p["hl"]))
+
+
 def run_spec(spec, r, seed=0):
     kind, p = parse(spec); lam = float(p.get("l", 0))
     if kind == "driver": return list(range(len(r.T)))
@@ -74,7 +82,7 @@ def run_spec(spec, r, seed=0):
         if "t0" in p: kw["temp_factor"] = float(p["t0"])         # initial temperature = t0 * cost / n
         if "tf" in p: kw["final_temp"] = float(p["tf"])          # final temperature (seconds)
         return plain_lns(r.T, r.zone, lam, int(p.get("i", 1500)), seed, pkg=getattr(r, "pkg", None), mu=mu,
-                         polish_final=p.get("pol", "0") == "1", closed=p.get("cl", "0") == "1", **kw)
+                         polish_final=p.get("pol", "0") == "1", closed=p.get("cl", "0") == "1", levels=_levels(r, p), **kw)
     if kind == "sa":
         kw = {}
         if "t0" in p: kw["t0f"] = float(p["t0"])
@@ -87,7 +95,7 @@ def run_spec(spec, r, seed=0):
                                kmax_div=int(p["kmax"]) if "kmax" in p else None, global_iters=int(p.get("g", 0)),
                                solver="sa" if kind == "zsa" else "lns",
                                sa_kw={k2: float(p[k1]) for k1, k2 in (("t0", "t0f"), ("tf", "tf")) if k1 in p},
-                               polish_final=p.get("pol", "0") == "1", rho=float(p.get("rho", 0)))
+                               polish_final=p.get("pol", "0") == "1", rho=float(p.get("rho", 0)), levels=_levels(r, p))
     if kind == "ortools":
         from .baselines import ortools_route
         return ortools_route(penalised_matrix(r.T, r.zone, lam), seconds=float(p.get("t", 10)))

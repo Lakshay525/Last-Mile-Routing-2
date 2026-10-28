@@ -179,3 +179,19 @@ def test_closed_tour_includes_the_return_leg():
     p = run_spec("lns:i=300:cl=1", r)
     # the closed-tour search starts from the nearest-neighbour tour and keeps its best, so it can never end worse than it
     assert valid(p, len(r.T)) and closed_time(r.T, p) <= closed_time(r.T, nearest_neighbour_path(r.T)) + 1e-6
+
+
+def test_zone_id_parsing_and_cluster_labels():
+    from lmr.hierarchy import parse, cluster_labels, chains
+    assert parse("A-2.1E") == ("A", "2", "1", "E") and parse("RTED3") is None
+    assert len(chains()) == 24
+    r = toy_route(n=9, zones=3); r.zone_names = ["A-2.1E", "A-2.2E", "B-1.1A"]
+    r.zone = np.array([-1, 0, 0, 1, 1, 2, 2, 0, 1])
+    lab = cluster_labels(r, (0, 1))                       # letter + first number: zones 0 and 1 are both "A-2", zone 2 is "B-1"
+    assert lab[0] == -1 and lab[1] == lab[3] and lab[1] != lab[5]
+
+
+def test_penalised_matrix_with_cluster_levels_adds_the_weight():
+    r = toy_route(n=9, zones=3); lab = np.array([-1, 0, 0, 0, 1, 1, 1, 0, 1])
+    C0 = penalised_matrix(r.T, r.zone, 10.0); C1 = penalised_matrix(r.T, r.zone, 10.0, [(lab, 7.0)])
+    assert C1[1, 4] - C0[1, 4] == pytest.approx(7.0) and C1[1, 2] == pytest.approx(C0[1, 2])

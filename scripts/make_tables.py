@@ -127,6 +127,36 @@ def main():
         print(f"\nFull-size routes ({len(f)} validation routes, CP-SAT 60 s, 2 workers, warm start from LNS): CP-SAT improves the LNS route by {f.imp.mean():.2f}% on average "
               f"(median {f.imp.median():.2f}%, max {f.imp.max():.2f}%); proved optimal on {(f.cpsat_status=='OPTIMAL').sum()} of {len(f)}; median proven optimality gap {f.gap.median():.1f}%.")
 
+    ab = R / "final_f6_ablation.csv"
+    if ab.exists():
+        a = pd.read_csv(ab); sa_ = summary(a, ["gap_vs_driver", "zone_sw", "official_score", "secs"]); sc = a.pivot(index="route", columns="method", values="official_score")
+        B = f"zlns:order=ref{ZL}:l=60"; rows = []
+        def vr(m, lab):
+            x = paired(a, m, B) if m != B else dict(mean_pts=0.0, ci95=0.0); d = (sc[m] - sc[B]).dropna()
+            rows.append({"variant": lab, "travel time vs driver %": 100 * sa_.loc[m, "gap_vs_driver"], "zone changes": sa_.loc[m, "zone_sw"], "official score": sa_.loc[m, "official_score"],
+                         "travel time vs default (points)": f"{x['mean_pts']:+.2f} +- {x['ci95']:.2f}", "score vs default": f"{d.mean():+.4f} +- {1.96*d.sem():.4f}"})
+        for o, on in (("ref", "reference-route order"), ("ztsp", "zone-level routing order")):
+            for w in (1, 2, 3, 4, 5):
+                vr(f"zlns:order={o}:w={w}:ii=1000:wi=1500:kmax=2:l=60", f"{on}, window of {w} zone(s)" + (" (no overlap)" if w == 1 else ""))
+        for m, lab in [("zlns:order=ref:w=3:ii=1000:wi=500:kmax=2:l=60", "reference order, w=3, 500 iterations per window"), ("zlns:order=ref:w=3:ii=1000:wi=4500:kmax=2:l=60", "reference order, w=3, 4,500 iterations per window"),
+                       ("zlns:order=ref:w=3:ii=300:wi=1500:kmax=2:l=60", "reference order, w=3, 300 iterations per zone"), ("zlns:order=ref:w=3:ii=1000:wi=1500:kmax=2:l=60:s=2", "reference order, w=3, two sweeps"),
+                       ("zlns:order=ref:w=3:ii=1000:wi=1500:l=60", "reference order, w=3, small neighbourhood (kmax=8)"), ("zlns:order=ref:w=3:ii=1000:wi=1500:kmax=2:l=60:g=5000", "reference order, w=3, plus a global LNS refinement (5,000 iterations)")]:
+            if m in sa_.index: vr(m, lab)
+        print("\n### T9. Ablation of the zonal method (test routes, lambda = 60; the default is the reference-route order with 3-zone windows)\n")
+        print(md(pd.DataFrame(rows), {"travel time vs driver %": 2, "zone changes": 1, "official score": 4}))
+
+    hi = R / "final_f7_hierarchy.csv"
+    if hi.exists():
+        h = pd.read_csv(hi); sh = summary(h, ["gap_vs_driver", "zone_sw", "sim_to_driver", "official_score"]); sc = h.pivot(index="route", columns="method", values="official_score"); rows = []
+        Lp, Zp = f"{LNS}:l=60", f"zlns:order=ref{ZL}:l=60"
+        for m in h.method.unique():
+            if m == "driver": continue
+            base = Lp if m.startswith("lns") else Zp; x = paired(h, m, base) if m != base else dict(mean_pts=0.0, ci95=0.0); d = (sc[m] - sc[base]).dropna()
+            rows.append({"method": m.replace(LNS, "plain LNS").replace(f"zlns:order=ref{ZL}", "zonal LNS, reference order"), "travel time vs driver %": 100 * sh.loc[m, "gap_vs_driver"], "zone changes": sh.loc[m, "zone_sw"],
+                         "official score": sh.loc[m, "official_score"], "travel time vs the lambda=60 row without hl (points)": f"{x['mean_pts']:+.2f} +- {x['ci95']:.2f}", "score vs the lambda=60 row without hl": f"{d.mean():+.4f} +- {1.96*d.sem():.4f}"})
+        print("\n### T10. Extra penalty for leaving coarser clusters of the zone ID (hl = seconds per level; lambda = 60 unless shown; test routes)\n")
+        print(md(pd.DataFrame(rows), {"travel time vs driver %": 2, "zone changes": 1, "official score": 4}))
+
 
 if __name__ == "__main__":
     main()

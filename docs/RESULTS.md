@@ -29,6 +29,8 @@ as the depot's zone; they now take the zone of the nearest stop, as in the LKH-A
 6. **A GNN adds nothing measurable over copying the best reference route.** With the reference route's order as input the GNN predicts the driver's zone order as well as the reference does (Kendall τ +0.624 vs +0.626 on average, median 0.872 vs 0.750), and the routes it yields score the same (difference −0.0021 ± 0.0023, T5, T6). Without that input (geometry and travel times only) the GNN is far weaker: validation next-zone accuracy 76% against 82%, and test τ +0.093 with greedy decoding and +0.071 with beam search (T6), against +0.57 and +0.62 with the reference features. Beam search helped the model with reference features (+0.572 → +0.624) but not the geometry-only one.
 7. **The balance of time and driver-likeness is tunable, and the best frontier comes from combining a data-derived zone order with the soft order penalty ρ and a global refinement (T3, T4, `figures/score_vs_time.png`).** At about the same travel time (−12.7% for ρ = 30 s against −12.9% for plain LNS with λ = 30 s) its official score is 0.048 against 0.064; at ρ = 100 s it reaches −9.7% travel time with score 0.037, where plain LNS with the zone penalty needs λ = 120 s (−10.6%) to get down to 0.054.
 8. **The savings are modest in the context of a whole route.** Travel time is 40% of a route (10,923 s of travel plus 16,297 s of service time per route; service time is the same for every method). Plain LNS saves 1,466 s of travel, which is 5.4% of the driver's 27,220 s.
+9. **Ablations (T9):** overlapping windows matter (3-zone windows are 2.62 ± 0.25 points faster than no overlap, at a score cost of 0.0023 ± 0.0009; wider windows trade a little driver-likeness for travel time); the large LNS neighbourhood matters inside the windows too (the old small one is 1.56 ± 0.19 points worse); the iteration budget does not (500 to 4,500 iterations per window give the same result, so the zonal method needs only about 0.06 s per route).
+10. **The structure inside the zone ID helps a little (T10).** Drivers almost never leave a cluster of zones that share the first letter (0.04 extra crossings per route) and rarely one that shares letter and first number (0.73), as in the winners' paper. Penalising these coarser clusters lowers the official score of plain LNS (λ = 60) from 0.058 to 0.051 (30 s per level, −0.0074 ± 0.0027) or 0.047 (60 s per level, −0.0112 ± 0.0029), for 0.7 or 1.2 points of travel time; for the zonal method the gain is smaller (0.035 → 0.033), because the reference zone order already carries this structure.
 
 ## 2. Approach by approach
 
@@ -225,3 +227,36 @@ Paper (Cook et al.): optimal ATSP tours 10,853.3 s / 0.07030; optimal zone-clust
 | 40 | 15 | 4 | 7 | 16.9 | 15.4 | 40.0 | 66.7 | 46.7 | 0.5 |
 
 Full-size routes (20 validation routes, CP-SAT 60 s, 2 workers, warm start from LNS): CP-SAT improves the LNS route by 0.61% on average (median 0.45%, max 1.92%); proved optimal on 2 of 20; median proven optimality gap 23.9%.
+
+### T9. Ablation of the zonal method (test routes, lambda = 60; the default is the reference-route order with 3-zone windows)
+
+| variant | travel time vs driver % | zone changes | official score | travel time vs default (points) | score vs default |
+|---|---|---|---|---|---|
+| reference-route order, window of 1 zone(s) (no overlap) | -5.45 | 19.3 | 0.0326 | +2.62 +- 0.25 | -0.0023 +- 0.0009 |
+| reference-route order, window of 2 zone(s) | -7.19 | 20.2 | 0.0333 | +0.88 +- 0.16 | -0.0016 +- 0.0008 |
+| reference-route order, window of 3 zone(s) | -8.07 | 20.5 | 0.0349 | +0.00 +- 0.00 | +0.0000 +- 0.0000 |
+| reference-route order, window of 4 zone(s) | -8.65 | 20.7 | 0.0356 | -0.58 +- 0.12 | +0.0007 +- 0.0006 |
+| reference-route order, window of 5 zone(s) | -9.12 | 20.9 | 0.0365 | -1.05 +- 0.15 | +0.0016 +- 0.0009 |
+| zone-level routing order, window of 1 zone(s) (no overlap) | -7.60 | 19.3 | 0.0545 | +0.48 +- 0.42 | +0.0197 +- 0.0041 |
+| zone-level routing order, window of 2 zone(s) | -8.98 | 20.1 | 0.0552 | -0.91 +- 0.39 | +0.0203 +- 0.0040 |
+| zone-level routing order, window of 3 zone(s) | -9.63 | 20.5 | 0.0553 | -1.56 +- 0.38 | +0.0204 +- 0.0041 |
+| zone-level routing order, window of 4 zone(s) | -10.05 | 20.7 | 0.0560 | -1.98 +- 0.38 | +0.0211 +- 0.0041 |
+| zone-level routing order, window of 5 zone(s) | -10.30 | 20.8 | 0.0567 | -2.23 +- 0.38 | +0.0218 +- 0.0041 |
+| reference order, w=3, 500 iterations per window | -8.05 | 20.5 | 0.0347 | +0.02 +- 0.05 | -0.0002 +- 0.0004 |
+| reference order, w=3, 4,500 iterations per window | -8.10 | 20.5 | 0.0349 | -0.03 +- 0.02 | +0.0001 +- 0.0001 |
+| reference order, w=3, 300 iterations per zone | -8.07 | 20.5 | 0.0349 | +0.00 +- 0.00 | +0.0000 +- 0.0000 |
+| reference order, w=3, two sweeps | -8.16 | 20.5 | 0.0348 | -0.09 +- 0.04 | -0.0001 +- 0.0002 |
+| reference order, w=3, small neighbourhood (kmax=8) | -6.51 | 20.3 | 0.0346 | +1.56 +- 0.19 | -0.0003 +- 0.0006 |
+| reference order, w=3, plus a global LNS refinement (5,000 iterations) | -11.56 | 21.3 | 0.0435 | -3.48 +- 0.40 | +0.0086 +- 0.0028 |
+
+### T10. Extra penalty for leaving coarser clusters of the zone ID (hl = seconds per level; lambda = 60 unless shown; test routes)
+
+| method | travel time vs driver % | zone changes | official score | travel time vs the lambda=60 row without hl (points) | score vs the lambda=60 row without hl |
+|---|---|---|---|---|---|
+| plain LNS:l=30:hl=30 | -11.95 | 22.6 | 0.0539 | -0.31 +- 0.15 | -0.0041 +- 0.0026 |
+| plain LNS:l=60 | -11.64 | 21.3 | 0.0580 | +0.00 +- 0.00 | +0.0000 +- 0.0000 |
+| plain LNS:l=60:hl=30 | -10.93 | 20.7 | 0.0505 | +0.71 +- 0.18 | -0.0074 +- 0.0027 |
+| plain LNS:l=60:hl=60 | -10.42 | 20.4 | 0.0468 | +1.22 +- 0.22 | -0.0112 +- 0.0029 |
+| zonal LNS, reference order:l=60 | -8.07 | 20.5 | 0.0349 | +0.00 +- 0.00 | +0.0000 +- 0.0000 |
+| zonal LNS, reference order:l=60:hl=30 | -7.70 | 20.2 | 0.0334 | +0.38 +- 0.10 | -0.0014 +- 0.0006 |
+| zonal LNS, reference order:l=60:hl=60 | -7.44 | 20.1 | 0.0328 | +0.63 +- 0.13 | -0.0021 +- 0.0008 |

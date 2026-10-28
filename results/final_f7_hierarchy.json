@@ -1,0 +1,25 @@
+{
+  "specs": [
+    "driver",
+    "lns:i=5000:kmax=2:l=60",
+    "lns:i=5000:kmax=2:l=60:hl=30",
+    "lns:i=5000:kmax=2:l=60:hl=60",
+    "lns:i=5000:kmax=2:l=30:hl=30",
+    "zlns:order=ref:w=3:ii=1000:wi=1500:kmax=2:l=60",
+    "zlns:order=ref:w=3:ii=1000:wi=1500:kmax=2:l=60:hl=30",
+    "zlns:order=ref:w=3:ii=1000:wi=1500:kmax=2:l=60:hl=60"
+  ],
+  "n_routes": 1000,
+  "limit": null,
+  "split": "test",
+  "subset": null,
+  "workers": 8,
+  "zone_model": null,
+  "seed": 0,
+  "time_windows": false,
+  "out": "results/final_f7_hierarchy.csv",
+  "commit": "9a600f6",
+  "date": "2026-10-28",
+  "n_routes_evaluated": 207,
+  "wall_seconds": 160
+}

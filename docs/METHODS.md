@@ -231,3 +231,17 @@ every edge in the segment.
 * **MIP**: the textbook compact formulation with Miller–Tucker–Zemlin order variables `u_i` and constraints
   `u_i − u_j + n x_ij ≤ n − 1` to forbid subtours, solved by SCIP through OR-Tools' linear-solver wrapper.
 * `scripts/solver_study.py` runs them on small instances (first `k` stops of validation routes) and full routes.
+
+## 14. Clusters inside the zone ID (extra penalty above the zone level)
+
+A zone ID has the form `G-x.yD` (for example `A-2.1E`): a capital letter `G`, an integer `x`, an integer `y` and a capital letter `D`
+(8,962 distinct IDs in the 6,112 training routes, two of which, `RTED3` and `LOA1`, do not fit the pattern and are treated as their own cluster).
+Following Cook, Held & Helsgaun (2022, section 4.6), stops are also grouped into **clusters that agree on a subset of the four components**.
+A chain of three nested clusterings `S > T > U` (`|S| = 3`, `|T| = 2`, `|U| = 1` components) is chosen on the **training routes only** as the one
+the drivers cross least. For a route and a clustering `K`, the *excess crossings* of the driver are
+`(number of consecutive stops in different clusters) − (number of clusters − 1)`, and the chain minimises the sum over its three levels of the
+mean excess crossings per route. Result: **`S = {G, x, D}`, `T = {G, x}`, `U = {G}`** with 1.98, 0.73 and 0.04 excess crossings per route
+(for comparison, 1.09 at the full-zone level), i.e. drivers almost never leave a first-letter cluster. This is the same chain as the example in the paper.
+
+The extra penalty adds `hl` seconds for each of the three levels left: `C[i][j] ← C[i][j] + hl · (1[S(i)≠S(j)] + 1[T(i)≠T(j)] + 1[U(i)≠U(j)])`,
+on top of `λ · 1[zone(i) ≠ zone(j)]` (spec key `hl`; code in `src/lmr/hierarchy.py`).
