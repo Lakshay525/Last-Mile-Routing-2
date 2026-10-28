@@ -171,6 +171,11 @@ def fig_pipeline():
 TAB = Path("paper/tables"); TAB.mkdir(exist_ok=True)
 
 
+def wrap(name, colspec, header, body):
+    """Write a complete tabular (input from main.tex outside any tabular: \\input right before a \\multicolumn breaks LaTeX)."""
+    (TAB / f"{name}.tex").write_text(f"\\begin{{tabular}}{{{colspec}}}\n\\toprule\n{header} \\\\\n\\midrule\n{body.strip()}\n\\bottomrule\n\\end{{tabular}}\n", encoding="utf-8")
+
+
 def pm(m, s, d):
     return f"${m:.{d}f}$" if (s is None or np.isnan(s)) else f"${m:.{d}f}\\pm{s:.{d}f}$"
 
@@ -182,7 +187,7 @@ def table_main(tab):
         for _, r in tab[tab.lam == lam].iterrows():
             L.append(f"{r.method} & {pm(r.t, r.t_sd, 2)} & {pm(r.z, r.z_sd, 1)} & {pm(r.s, r.s_sd, 4)} \\\\")
         L.append("\\midrule" if lam == 0 else "")
-    (TAB / "main.tex").write_text("\n".join(L), encoding="utf-8")
+    wrap("main", "lR{3.1cm}R{2.4cm}R{2.9cm}", "Method & Travel time vs.\\ driver (\\%) & Zone changes & Official score", "\n".join(L))
 
 
 def _pair(df, col, a, b, scale=1.0):
@@ -210,7 +215,7 @@ def table_paired():
             m, ci, share, n = _pair(df, col, a, b, sc); d = 2 if col == "gap_vs_driver" else 4
             L.append(f"{lab} & ${m:+.{d}f}$ & $\\pm{ci:.{d}f}$ & {share:.0f}\\% \\\\")
         L.append("\\midrule" if col == "gap_vs_driver" else "")
-    (TAB / "paired.tex").write_text("\n".join(L), encoding="utf-8")
+    wrap("paired", "p{8.6cm}R{2.0cm}R{2.2cm}R{2.0cm}", "Comparison & Difference & 95\\% interval & First better", "\n".join(L))
 
 
 def table_ablation():
@@ -226,7 +231,7 @@ def table_ablation():
         if k == "w=3:ii=1000:wi=1500": spec = "zlns:order=ref:w=3:ii=1000:wi=1500:l=60"
         s = a[a.method == spec]; m, ci, _, _ = _pair(a, "gap_vs_driver", spec, base, 100); m2, ci2, _, _ = _pair(a, "official_score", spec, base, 1)
         L.append(f"{lab} & ${100 * s.gap_vs_driver.mean():.2f}$ & ${s.official_score.mean():.4f}$ & ${m:+.2f}\\pm{ci:.2f}$ & ${m2:+.4f}\\pm{ci2:.4f}$ \\\\")
-    (TAB / "ablation.tex").write_text("\n".join(L), encoding="utf-8")
+    wrap("ablation", "p{4.9cm}R{2.3cm}R{1.9cm}R{2.5cm}R{2.5cm}", "Variant & Travel time vs.\\ driver (\\%) & Official score & Time vs.\\ default (points) & Score vs.\\ default", "\n".join(L))
 
 
 def table_literature():
@@ -243,7 +248,7 @@ def table_literature():
         x = g(m); L.append(f"{lab} & {x.closed_time.mean():,.1f} & {pt} \\\\"); L.append(f"\\hspace{{1.5em}}official score of these tours & {x.official_score.mean():.4f} & {ps} \\\\")
     for lab, m in (("Zonal LNS, past-routes order ($\\lambda=60$): official score", f"zlns:order=ref:{ZL}:l=60"), ("Plain LNS ($\\lambda=60$): official score", f"{LNS}:l=60")):
         L.append(f"{lab} & {g(m).official_score.mean():.4f} & {'0.03171--0.03322' if 'zonal' in lab else '--'} \\\\")
-    (TAB / "literature.tex").write_text("\n".join(L), encoding="utf-8")
+    wrap("literature", "p{9.2cm}R{2.4cm}R{3.2cm}", " & Ours & Cook et al.\\ (2022)", "\n".join(L))
 
 
 if __name__ == "__main__":

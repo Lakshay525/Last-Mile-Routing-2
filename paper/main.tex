@@ -221,13 +221,7 @@ Table~\ref{tab:main} shows the five methods at $\lambda=0$ (travel time only) an
 \begin{table}[t]
 \centering\small
 \caption{Results on the 207 test routes, seeds $0$--$4$ (mean $\pm$ standard deviation over seeds; OR-Tools: one run). Travel time is relative to the driver's route (negative = less). The driver has 20.3 zone changes and official score 0 by definition. ``Order by zone routing'' and ``order from past routes'' are the two ways to choose the zone order (Section~\ref{sec:zonal}).}\label{tab:main}
-\begin{tabular}{lR{3.1cm}R{2.4cm}R{2.9cm}}
-\toprule
-Method & Travel time vs.\ driver (\%) & Zone changes & Official score \\
-\midrule
 \input{tables/main}
-\bottomrule
-\end{tabular}
 \end{table}
 
 \begin{figure}[t]
@@ -258,13 +252,7 @@ Table~\ref{tab:paired} gives the route-by-route differences between selected pai
 \begin{table}[t]
 \centering\small
 \caption{Paired differences on the 207 test routes, seed 0 (first method minus second; negative = first method is better). The last column is the share of routes on which the first method is better.}\label{tab:paired}
-\begin{tabular}{p{8.6cm}R{2.0cm}R{2.2cm}R{2.0cm}}
-\toprule
-Comparison & Difference & 95\% interval & First better \\
-\midrule
 \input{tables/paired}
-\bottomrule
-\end{tabular}
 \end{table}
 
 \subsection{Effect of the zone-change penalty $\lambda$}\label{sec:lambda}
@@ -297,13 +285,7 @@ An \emph{ablation} removes or changes one ingredient of a method and measures ho
 \begin{table}[t]
 \centering\small
 \caption{Ablation of zonal LNS (past-routes order, $\lambda=60$ s, 207 test routes, seed 0). The last two columns are paired differences to the default; for travel time, positive means less saving than the default, and for the score, negative means closer to the driver.}\label{tab:ablation}
-\begin{tabular}{p{4.9cm}R{2.3cm}R{1.9cm}R{2.5cm}R{2.5cm}}
-\toprule
-Variant & Travel time vs.\ driver (\%) & Official score & Time vs.\ default (points) & Score vs.\ default \\
-\midrule
 \input{tables/ablation}
-\bottomrule
-\end{tabular}
 \end{table}
 
 \begin{figure}[t]
@@ -318,13 +300,7 @@ Variant & Travel time vs.\ driver (\%) & Official score & Time vs.\ default (poi
 \begin{table}[t]
 \centering\small
 \caption{Comparison with published numbers of \citet{cook2022} on the 1,107 routes (closed tours). Our rows are runs of our methods on all parts of the split (no tuning on these routes). Their zone-clustered optimum and their score of the LKH-AMZ variant with reference-route precedence constraints are taken from their paper.}\label{tab:lit}
-\begin{tabular}{p{9.2cm}R{2.4cm}R{3.2cm}}
-\toprule
- & Ours & \citet{cook2022} \\
-\midrule
 \input{tables/literature}
-\bottomrule
-\end{tabular}
 \end{table}
 
 Our driver statistics and the score of random tours agree with the paper (12,250.0 s, 163,177 stops, 0.9127 against 0.91545). Our near-optimal closed tours are 0.8--1.0\% above their proven-optimal mean time (10,958 s at 5,000 iterations and 10,945 s at 15,000, against 10,853.3 s), and our zone-clustered tours are 0.6--0.8\% above their optimal zone-clustered tours. With the past-routes zone order, our zonal LNS scores 0.0347 on this set, which is \emph{worse} than the 0.0317--0.0332 they report for LKH-AMZ with learned precedence constraints. Our scoring code could not be compared with Amazon's scorer on identical inputs, only through these published aggregates. We do not compare with the winning score of 0.0248, because that was measured on Amazon's hidden evaluation routes with the full competition solution and is not the same experiment.
