@@ -1,0 +1,25 @@
+{
+  "n": null,
+  "subset_seed": 0,
+  "seed": 1,
+  "workers": 10,
+  "chunk": 100,
+  "ortools": false,
+  "out": "results\\eval_full_s1.csv",
+  "specs": [
+    "driver",
+    "lns:i=5000:kmax=2:l=0",
+    "zlns:order=ztsp:w=3:ii=1000:wi=1500:kmax=2:l=0",
+    "zlns:order=ref:w=3:ii=1000:wi=1500:kmax=2:l=0",
+    "zsa:order=ztsp:w=3:ii=50000:wi=300000:t0=0.5:l=0",
+    "zsa:order=ref:w=3:ii=50000:wi=300000:t0=0.5:l=0",
+    "lns:i=5000:kmax=2:l=60",
+    "zlns:order=ztsp:w=3:ii=1000:wi=1500:kmax=2:l=60",
+    "zlns:order=ref:w=3:ii=1000:wi=1500:kmax=2:l=60",
+    "zsa:order=ztsp:w=3:ii=50000:wi=300000:t0=0.5:l=60",
+    "zsa:order=ref:w=3:ii=50000:wi=300000:t0=0.5:l=60"
+  ],
+  "n_routes": 3052,
+  "wall_seconds": 2628,
+  "date": "2026-10-29"
+}

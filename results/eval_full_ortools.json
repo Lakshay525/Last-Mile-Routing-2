@@ -1,0 +1,16 @@
+{
+  "n": null,
+  "subset_seed": 0,
+  "seed": 0,
+  "workers": 10,
+  "chunk": 100,
+  "ortools": true,
+  "out": "results\\eval_full_ortools.csv",
+  "specs": [
+    "ortools:t=10",
+    "ortools:t=10:l=60"
+  ],
+  "n_routes": 3052,
+  "wall_seconds": 6425,
+  "date": "2026-10-29"
+}

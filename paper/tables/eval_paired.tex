@@ -1,0 +1,20 @@
+\begin{tabular}{p{8.6cm}R{2.0cm}R{2.2cm}R{2.0cm}}
+\toprule
+Comparison & Difference & 95\% interval & First better \\
+\midrule
+\multicolumn{4}{l}{\textit{travel time (points)}}\\
+$\lambda=0$: plain LNS vs OR-Tools & $-2.96$ & $\pm0.07$ & 97\% \\
+$\lambda=0$: zonal LNS (zone-routing order) vs OR-Tools & $-0.21$ & $\pm0.10$ & 57\% \\
+$\lambda=0$: zonal LNS (zone-routing order) vs plain LNS & $+2.75$ & $\pm0.09$ & 7\% \\
+$\lambda=0$: zonal SA vs zonal LNS (zone-routing order) & $+0.01$ & $\pm0.02$ & 49\% \\
+$\lambda=60$: zonal SA vs zonal LNS (past-routes order) & $-0.19$ & $\pm0.03$ & 52\% \\
+$\lambda=60$: plain LNS vs OR-Tools & $-2.01$ & $\pm0.06$ & 89\% \\
+$\lambda=60$: zonal LNS (past-routes order) vs OR-Tools & $+2.26$ & $\pm0.14$ & 31\% \\
+$\lambda=60$: zonal LNS (past-routes order) vs plain LNS & $+4.27$ & $\pm0.13$ & 5\% \\
+\midrule
+\multicolumn{4}{l}{\textit{official score}}\\
+$\lambda=60$: zonal LNS (past-routes order) vs OR-Tools & $-0.0210$ & $\pm0.0011$ & 79\% \\
+$\lambda=60$: zonal LNS (past-routes order) vs plain LNS & $-0.0147$ & $\pm0.0011$ & 72\% \\
+$\lambda=60$: zonal LNS, past-routes vs zone-routing order & $-0.0115$ & $\pm0.0010$ & 66\% \\
+\bottomrule
+\end{tabular}
