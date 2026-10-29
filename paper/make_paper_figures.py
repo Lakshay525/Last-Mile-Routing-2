@@ -29,7 +29,6 @@ seeds = pd.concat([seed0] + [pd.read_csv(f).assign(seed=int(f.split("seed")[-1][
 ort = pd.read_csv(R / "final_f2_ortools.csv")
 METHODS = {  # label -> (spec prefix, colour, marker)
     "plain LNS": (LNS, "#1b6ca8", "o"),
-    "plain SA": (SA, "#7f7f7f", "s"),
     "zonal LNS, order by zone routing": (f"zlns:order=ztsp:{ZL}", "#e08214", "^"),
     "zonal LNS, order from past routes": (f"zlns:order=ref:{ZL}", "#b2182b", "D"),
     "zonal SA, order by zone routing": (f"zsa:order=ztsp:{ZS}", "#fdb863", "v"),
@@ -87,7 +86,7 @@ def fig_lambda():
 # ------------------------------------------------------------------ Fig 3: run time
 def fig_time():
     d = pd.read_csv(R / "final_f4_timing.csv")
-    rows = [("OR-Tools, 10 s limit", "ortools:t=10"), ("OR-Tools, 2 s limit", "ortools:t=2"), ("plain LNS", LNS), ("plain SA", SA),
+    rows = [("OR-Tools, 10 s limit", "ortools:t=10"), ("OR-Tools, 2 s limit", "ortools:t=2"), ("plain LNS", LNS),
             ("zonal SA (zone routing order)", f"zsa:order=ztsp:{ZS}"), ("zonal LNS (zone routing order)", f"zlns:order=ztsp:{ZL}"), ("zonal LNS (past-routes order)", f"zlns:order=ref:{ZL}")]
     v = [d[d.method == m].secs.mean() for _, m in rows]
     fig, ax = plt.subplots(figsize=(6, 2.6)); y = np.arange(len(rows))
@@ -200,9 +199,9 @@ def table_paired():
     P = lambda s: s
     ZLx, ZSx = lambda o, l: f"zlns:order={o}:{ZL}:l={l}", lambda o, l: f"zsa:order={o}:{ZS}:l={l}"
     rows = [("travel time (points)", "gap_vs_driver", 100, [
-        ("$\\lambda=0$: plain LNS vs OR-Tools", f"{LNS}:l=0", "ortools:t=10"), ("$\\lambda=0$: plain SA vs OR-Tools", f"{SA}:l=0", "ortools:t=10"),
-        ("$\\lambda=0$: plain SA vs plain LNS", f"{SA}:l=0", f"{LNS}:l=0"), ("$\\lambda=0$: zonal LNS (zone-routing order) vs OR-Tools", ZLx("ztsp", 0), "ortools:t=10"),
+        ("$\\lambda=0$: plain LNS vs OR-Tools", f"{LNS}:l=0", "ortools:t=10"), ("$\\lambda=0$: zonal LNS (zone-routing order) vs OR-Tools", ZLx("ztsp", 0), "ortools:t=10"),
         ("$\\lambda=0$: zonal LNS (zone-routing order) vs plain LNS", ZLx("ztsp", 0), f"{LNS}:l=0"), ("$\\lambda=0$: zonal SA vs zonal LNS (zone-routing order)", ZSx("ztsp", 0), ZLx("ztsp", 0)),
+        ("$\\lambda=60$: zonal SA vs zonal LNS (past-routes order)", ZSx("ref", 60), ZLx("ref", 60)),
         ("$\\lambda=60$: plain LNS vs OR-Tools", f"{LNS}:l=60", "ortools:t=10:l=60"), ("$\\lambda=60$: zonal LNS (past-routes order) vs OR-Tools", ZLx("ref", 60), "ortools:t=10:l=60"),
         ("$\\lambda=60$: zonal LNS (past-routes order) vs plain LNS", ZLx("ref", 60), f"{LNS}:l=60")]),
         ("official score", "official_score", 1, [
@@ -246,8 +245,6 @@ def table_literature():
                            ("Zone-clustered closed tours (LNS, $\\lambda=3000$ s, 5,000 it.): time (s)", "lns:i=5000:kmax=2:cl=1:l=3000", "11,235.1 (optimal)", "0.04866"),
                            ("Zone-clustered closed tours (LNS, $\\lambda=30000$ s, 15,000 it.): time (s)", "lns:i=15000:kmax=2:cl=1:l=30000", "11,235.1 (optimal)", "0.04866")):
         x = g(m); L.append(f"{lab} & {x.closed_time.mean():,.1f} & {pt} \\\\"); L.append(f"\\hspace{{1.5em}}official score of these tours & {x.official_score.mean():.4f} & {ps} \\\\")
-    for lab, m in (("Zonal LNS, past-routes order ($\\lambda=60$): official score", f"zlns:order=ref:{ZL}:l=60"), ("Plain LNS ($\\lambda=60$): official score", f"{LNS}:l=60")):
-        L.append(f"{lab} & {g(m).official_score.mean():.4f} & {'0.03171--0.03322' if 'zonal' in lab else '--'} \\\\")
     wrap("literature", "p{9.2cm}R{2.4cm}R{3.2cm}", " & Ours & Cook et al.\\ (2022)", "\n".join(L))
 
 
