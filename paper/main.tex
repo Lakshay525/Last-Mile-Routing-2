@@ -25,8 +25,9 @@
 Large Neighbourhood Search and Simulated Annealing\\
 Compared with OR-Tools on the Amazon Routing Challenge Data}
 
-% Please fill in the surname and add the supervisor if wanted, e.g. \author{Lakshay <surname>\\ Deakin University \and <Supervisor>\\ Deakin University}
-\author{Lakshay\\Deakin University}
+\author{Prof.\ Dhananjay Thiruvady\\Deakin University
+\and Prof.\ Sutharshan Rajasegarar\\Deakin University
+\and Lakshay Shrivastava\\Indian Institute of Technology Kharagpur}
 \date{\today}
 
 \begin{document}
@@ -45,7 +46,7 @@ In this report we ask a simpler and narrower question. \emph{Given only the trav
 
 \subsection{What this report contributes}
 \begin{itemize}
-  \item A comparison of three approaches with an OR-Tools baseline under one objective and one protocol. The approaches are plain LNS, zonal LNS and zonal SA, described in Section~\ref{sec:methods}. The suggestion to test simulated annealing inside the zone pipeline came from our supervisor.
+  \item A comparison of three approaches with an OR-Tools baseline under one objective and one protocol. The approaches are plain LNS, zonal LNS and zonal SA, described in Section~\ref{sec:methods}. The third approach tests simulated annealing inside the zone pipeline.
   \item A zone-change penalty $\lambda$ that lets the same method trade travel time against tidiness, and a study of how it changes the routes (Section~\ref{sec:lambda}).
   \item Ablations of the zonal pipeline: window overlap, neighbourhood size and iteration budget (Section~\ref{sec:ablation}).
   \item A check of our data handling and scoring code against numbers published by \citet{cook2022} for the same 1,107 routes (Section~\ref{sec:lit}).
@@ -332,8 +333,6 @@ Estimated travel time is only a part of the working day. On our test routes it a
 We compared OR-Tools with plain LNS, zonal LNS and zonal SA on 207 held-out routes of the Amazon Last Mile Routing Challenge. Plain LNS gives the largest saving in estimated travel time (13.8\%, against 10.4\% for OR-Tools) but produces routes that differ from the drivers'. A zone-based pipeline with a zone order taken from earlier routes of the same depot produces routes much closer to the drivers' (official score 0.043 against 0.079 at $\lambda=0$). It saves about four points less travel time (9.7\% against 13.8\%), and zonal LNS is about 13 times faster than plain LNS and 67 times faster than OR-Tools per route. The penalty $\lambda$ gives a simple way to move between the two kinds of route. Simulated annealing and LNS perform nearly equally in the zonal pipeline.
 
 The next steps are the evaluation on the 3,052 routes of the challenge's evaluation folder, and a cost model once cost figures are available.
-
-\paragraph{Acknowledgements.} The suggestion to test simulated annealing inside the zone-based pipeline and to use OR-Tools as the baseline came from our supervisor.
 
 \appendix
 \section{Quality check of LNS against exact solvers}\label{app:exact}
