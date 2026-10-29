@@ -49,7 +49,6 @@ In this report we ask a simpler and narrower question. \emph{Given only the trav
   \item A comparison of three approaches with an OR-Tools baseline under one objective and one protocol. The approaches are plain LNS, zonal LNS and zonal SA, described in Section~\ref{sec:methods}. The third approach tests simulated annealing inside the zone pipeline.
   \item A zone-change penalty $\lambda$ that lets the same method trade travel time against tidiness, and a study of how it changes the routes (Section~\ref{sec:lambda}).
   \item Ablations of the zonal pipeline: window overlap, neighbourhood size and iteration budget (Section~\ref{sec:ablation}).
-  \item A check of our data handling and scoring code against numbers published by \citet{cook2022} for the same 1,107 routes (Section~\ref{sec:lit}).
   \item Five random seeds for every method of ours, and paired comparisons with confidence intervals (Sections~\ref{sec:main} and~\ref{sec:paired}).
 \end{itemize}
 
@@ -58,7 +57,7 @@ Section~\ref{sec:related} reviews the five papers we studied and the classical m
 
 \section{Related work}\label{sec:related}
 \paragraph{Challenge and winning solution.}
-\citet{merchan2022} describe the challenge data and \citet{winkenbach2021} collect the technical reports of the participants. \citet{cook2022} adapt the Lin--Kernighan--Helsgaun TSP heuristic \citep{linkernighan1973,helsgaun2000,helsgaun2017} to the problem. They add penalties for visiting zones in an order that earlier drivers did not use, learn this order from ``reference routes'' of the same depot, and add penalties for leaving clusters of zones that share part of their zone ID. Their entry won the challenge. We use two of their ideas, the zone-change penalty and the reference-route zone order, but with our own, simpler optimisers. We also use their paper as the source of the 1,107-route benchmark of Section~\ref{sec:lit}.
+\citet{merchan2022} describe the challenge data and \citet{winkenbach2021} collect the technical reports of the participants. \citet{cook2022} adapt the Lin--Kernighan--Helsgaun TSP heuristic \citep{linkernighan1973,helsgaun2000,helsgaun2017} to the problem. They add penalties for visiting zones in an order that earlier drivers did not use, learn this order from ``reference routes'' of the same depot, and add penalties for leaving clusters of zones that share part of their zone ID. Their entry won the challenge. We use two of their ideas, the zone-change penalty and the reference-route zone order, but with our own, simpler optimisers.
 
 \paragraph{Learning-based approaches.}
 \citet{ruizfas} train a graph neural network encoder with a pointer-network decoder per geographical zone on the Los Angeles routes of the challenge. \citet{kool2019} propose an attention model trained with reinforcement learning for TSP and vehicle-routing variants on random instances of up to 100 nodes. \citet{ozarik} frame the challenge as an inverse-optimisation problem. They generate a pool of candidate sequences and select among them with a regression model that predicts the challenge score. \citet{xu2026} study order dispatching and routing for last-mile \emph{pickup} with deep reinforcement learning, which is a different problem from ours. We include it because it uses graph attention for routing in a last-mile setting. We also trained a zone-order graph neural network during this project, but it gave no gain over copying a reference route and is not part of the methods compared here.
@@ -127,7 +126,7 @@ The challenge scores a proposed sequence $B$ against the driver's sequence $A$ b
 $\mathrm{SD}(A,B)=\frac{2}{n(n-1)}\sum_{k}\bigl(|\mathrm{pos}_A(B_{k+1})-\mathrm{pos}_A(B_k)|-1\bigr)$, where $\mathrm{pos}_A(x)$ is the position of stop $x$ in $A$. It is 0 if $B$ visits the stops in the same order as $A$.
 \item $\mathrm{ERP}_{\mathrm{norm}}$ is an edit distance (edit distance with real penalty) between the two sequences. Replacing one stop by another costs their travel time (scaled by the standard deviation of the travel-time matrix), inserting or deleting a stop costs 1000, and the total is divided by the number of edit operations.
 \end{itemize}
-We re-implemented this score from the public scoring code of the challenge. We checked it against published numbers but not against Amazon's scorer on the same submissions (Section~\ref{sec:lit}). The score is only a \emph{proxy} for ``looks like what the driver did''. It does not tell us whether a driver would accept the route.
+We re-implemented this score from the public scoring code of the challenge. We checked it on simple cases (the driver's own sequence scores 0, and random orders score about 0.9) but could not compare it with Amazon's own scorer on the same submissions, so small differences are possible. The score is only a \emph{proxy} for ``looks like what the driver did''. It does not tell us whether a driver would accept the route.
 
 \subsection{Comparing methods}
 All methods are run on the same routes. For two methods $a$ and $b$ we compute the difference of their results route by route and report its mean, a 95\% interval (mean $\pm\,1.96$ standard errors over routes) and the share of routes on which $a$ is better. If the interval excludes zero we treat the difference as real. These intervals describe variation between routes only. Variation between random seeds is shown separately.
@@ -204,8 +203,6 @@ OR-Tools & nothing (default settings) & 207 test routes \\
 Plain LNS & settings tuned on 60 validation routes, no training & 207 test routes \\
 Zonal LNS / SA, order by zone routing & settings tuned on 60 validation routes, no training & 207 test routes \\
 Zonal LNS / SA, order from past routes & as above, plus the library of 3,691 training routes (zone order only) & 207 test routes \\
-\midrule
-Check against the literature (Sec.~\ref{sec:lit}) & no tuning on these routes & the 1,107 routes of \citet{cook2022}, taken from all parts of the split \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -295,17 +292,6 @@ An \emph{ablation} removes or changes one ingredient of a method and measures ho
 \caption{Window width $w$ of the zonal LNS ($w=1$ means no overlap), $\lambda=60$ s, seed 0. Wider windows save more travel time and give up a little similarity to the driver, for both zone orders.}\label{fig:ablation}
 \end{figure}
 
-\subsection{Check of the data handling against the literature}\label{sec:lit}
-\citet{cook2022} evaluate on 1,107 routes, those rated ``high'' with no undelivered package. We reproduced this set and obtained the same count of 1,107. Table~\ref{tab:lit} compares our numbers with the values they publish for the driver, for random tours and for optimal tours. The purpose is to validate our data handling, our closed-tour definition (a tour back to the depot) and our scorer. It is not a ranking of methods, because they report exact optima and we use LNS.
-
-\begin{table}[t]
-\centering\small
-\caption{Check against published numbers of \citet{cook2022} on the 1,107 routes (closed tours). Our rows are runs of plain LNS on all parts of the split, with no tuning on these routes. Their values for optimal tours are taken from their paper.}\label{tab:lit}
-\input{tables/literature}
-\end{table}
-
-Our driver statistics and the score of random tours agree with the paper (12,250.0 s, 163,177 stops, 0.9127 against 0.91545). Our near-optimal closed tours are 0.8--1.0\% above their proven-optimal mean time (10,958 s at 5,000 iterations and 10,945 s at 15,000, against 10,853.3 s). Our zone-clustered tours are 0.6--0.8\% above their optimal zone-clustered tours. The scores of these tours are close to theirs but not identical. Our scoring code could not be compared with Amazon's scorer on identical inputs, only through these published aggregates.
-
 \subsection{How large are the savings?}
 Estimated travel time is only a part of the working day. On our test routes it averages 10,923 s, while the service time (time at the doors) averages 16,297 s, so travel time is about 40\% of a route's duration. Service time does not depend on the order. Even the best result, plain LNS with 13.8\% less travel time, corresponds to a saving of about 1,470 s, or 5.4\% of the total route duration of 27,220 s. The estimates also ignore parking, construction and real traffic.
 
@@ -323,7 +309,7 @@ Estimated travel time is only a part of the working day. On our test routes it a
 \item \textbf{Real driving.} All times are estimates from the data set. We do not know whether a route with less estimated travel time is quicker on the road. The official score is a proxy for driver acceptance and not a measurement of it.
 \item \textbf{Constraints we ignore.} Delivery time windows, parcel sizes and service times are not part of the objective. Routes with less travel time might violate time windows that the drivers' routes respect. We therefore do not claim that these routes are feasible in practice.
 \item \textbf{Strength of the baseline.} OR-Tools was run with one configuration (guided local search, 10 s), without tuning, and as one time-limited run. A tuned configuration or a longer limit might narrow the gap.
-\item \textbf{Not a competition entry.} This report compares general-purpose methods. The winning solution of \citet{cook2022} uses specialised search and further constraints that we do not use, and we make no claim to match it.
+\item \textbf{Not a competition entry.} This report compares general-purpose methods and is not a competition entry.
 \item \textbf{Data.} We use one data set and one sample of 1,000 routes, of which 207 form the test set, covering 16 of the 17 depots. The separate evaluation folder has not been used yet. The past-routes order needs historical routes of the same depot and is not available for a new depot.
 \item \textbf{Tuning.} Settings come from 60 validation routes and several were fixed before a data correction (the missing zone IDs). The zonal settings were not re-tuned. The values $\lambda=0$ and $\lambda=60$ are fixed choices. Part of the gap between methods might change with other settings, although the ablation suggests that the iteration budget is not a sensitive choice.
 \item \textbf{Statistics.} The intervals in Tables~\ref{tab:paired} and~\ref{tab:ablation} describe variation between routes for one seed, and the seed study uses five seeds. They do not cover other samples of routes or other data sets.
@@ -336,7 +322,7 @@ The next steps are the evaluation on the 3,052 routes of the challenge's evaluat
 
 \appendix
 \section{Quality check of LNS against exact solvers}\label{app:exact}
-To see how close LNS gets to the best possible route, we compared it with the exact solvers of OR-Tools on the first $k$ stops of 15 validation routes for each size $k$ (20 s limit, one worker). Table~\ref{tab:exact} shows the result. CP-SAT (a circuit constraint model) proves optimality for all instances up to 20 stops, but for only 4 of 15 at 40 stops. A textbook mixed-integer formulation (Miller--Tucker--Zemlin constraints, solved with SCIP) is slower at 20 to 30 stops but proves optimality more often at 40 stops (7 of 15). On these small instances LNS found the best known solution in 40 to 67\% of the cases from 15 stops upwards, with a mean excess of at most 0.7\%. On 20 full-size validation routes, CP-SAT (60 s, two workers) warm-started from the LNS route improved it by 0.61\% on average (at most 1.9\%) and proved optimality on 2 of 20. Its proven lower bound is too weak at this size (median gap 24\%) to certify near-optimality. Together with the gap of about 1\% to the proven optimum in Section~\ref{sec:lit}, this suggests that plain LNS is within about 1\% of the best possible travel time on a route. It does not prove it.
+To see how close LNS gets to the best possible route, we compared it with the exact solvers of OR-Tools on the first $k$ stops of 15 validation routes for each size $k$ (20 s limit, one worker). Table~\ref{tab:exact} shows the result. CP-SAT (a circuit constraint model) proves optimality for all instances up to 20 stops, but for only 4 of 15 at 40 stops. A textbook mixed-integer formulation (Miller--Tucker--Zemlin constraints, solved with SCIP) is slower at 20 to 30 stops but proves optimality more often at 40 stops (7 of 15). On these small instances LNS found the best known solution in 40 to 67\% of the cases from 15 stops upwards, with a mean excess of at most 0.7\%. On 20 full-size validation routes, CP-SAT (60 s, two workers) warm-started from the LNS route improved it by 0.61\% on average (at most 1.9\%) and proved optimality on 2 of 20. Its proven lower bound is too weak at this size (median gap 24\%) to certify near-optimality. This suggests that plain LNS is within about 1\% of the best possible travel time on a route on average, but it does not prove it.
 
 \begin{table}[h]
 \centering\small
@@ -356,7 +342,7 @@ $k$ & CP-SAT proved optimal & MIP proved optimal & LNS found best known (\%) & L
 \end{table}
 
 \section{Reproducing the results}
-All numbers and figures of this report are generated from result files in the project repository (\url{https://github.com/Lakshay525/Last-Mile-Routing-2}). The script \texttt{scripts/run\_final.sh} runs the experiments of Sections~\ref{sec:main} to~\ref{sec:lit}, \texttt{scripts/run\_seeds.sh} runs the four additional seeds, and \texttt{paper/make\_paper\_figures.py} writes the figures and tables in this document. Method settings are written as specification strings, for example \texttt{lns:i=5000:kmax=2:l=60} (plain LNS, 5,000 iterations, $\lambda=60$) or \texttt{zlns:order=ref:w=3:ii=1000:wi=1500:kmax=2:l=60} (zonal LNS with the past-routes order).
+All numbers and figures of this report are generated from result files by scripts of the project code, which is not publicly released. The script \texttt{scripts/run\_final.sh} runs the experiments of Sections~\ref{sec:main} to~\ref{sec:ablation}, \texttt{scripts/run\_seeds.sh} runs the four additional seeds, and \texttt{paper/make\_paper\_figures.py} writes the figures and tables in this document. Method settings are written as specification strings, for example \texttt{lns:i=5000:kmax=2:l=60} (plain LNS, 5,000 iterations, $\lambda=60$) or \texttt{zlns:order=ref:w=3:ii=1000:wi=1500:kmax=2:l=60} (zonal LNS with the past-routes order).
 
 \bibliography{references}
 

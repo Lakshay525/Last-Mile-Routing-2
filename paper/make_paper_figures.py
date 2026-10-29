@@ -250,6 +250,6 @@ def table_literature():
 
 if __name__ == "__main__":
     tab = stats_table(); tab.to_csv(OUT / "main_table.csv", index=False); print(tab.round(4).to_string())
-    table_main(tab); table_paired(); table_ablation(); table_literature()
+    table_main(tab); table_paired(); table_ablation()
     fig_tradeoff(tab); fig_lambda(); fig_time(); fig_ablation(); fig_pipeline(); fig_data(); fig_routes()
     print("wrote", sorted(p.name for p in OUT.iterdir()))
