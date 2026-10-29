@@ -49,8 +49,10 @@ def zone_order(r, name, seed=0, beam=1):
     if name == "ref":
         if _CTX["ref_index"] is None:
             import pickle
+            import os
             from . import config
-            _CTX["ref_index"] = pickle.load(open(config.CACHE_DIR / "ref_index.pkl", "rb"))     # built by scripts/build_ref_index.py
+            path = os.environ.get("LMR_REF_INDEX") or config.CACHE_DIR / "ref_index.pkl"           # built by scripts/build_ref_index.py
+            _CTX["ref_index"] = pickle.load(open(path, "rb"))
         return order_reference(r, _CTX["ref_index"])
     if name == "gnn":
         from .zone_gnn import predict_order

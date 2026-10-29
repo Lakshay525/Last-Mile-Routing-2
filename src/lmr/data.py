@@ -56,6 +56,25 @@ def load_routes(n=50, seed=config.SEED):
     pickle.dump(routes, open(cache, "wb"))
     return routes
 
+EVAL = config.DATA_ROOT / "almrrc2021-data-evaluation"
+
+
+def load_eval_routes():
+    """All routes of the challenge's evaluation folder (3,052 routes, none of them in the training folder), with the drivers' sequences.
+    Built once by streaming the 843 MB travel-time file and cached."""
+    config.CACHE_DIR.mkdir(exist_ok=True)
+    cache = config.CACHE_DIR / "eval_routes.pkl"
+    if cache.exists():
+        return pickle.load(open(cache, "rb"))
+    meta = json.load(open(EVAL / "model_apply_inputs" / "eval_route_data.json"))
+    seqs = json.load(open(EVAL / "model_score_inputs" / "eval_actual_sequences.json"))
+    routes = [build_route(rid, meta[rid], seqs[rid], mat)
+              for rid, mat in iter_travel_times(EVAL / "model_apply_inputs" / "eval_travel_times.json")]
+    routes.sort(key=lambda r: r.rid)
+    pickle.dump(routes, open(cache, "wb"), protocol=pickle.HIGHEST_PROTOCOL)
+    return routes
+
+
 def split_of(rid):
     """Deterministic 60/20/20 split decided by the route id, so it never changes with n or seed."""
     h = int(hashlib.md5(rid.encode()).hexdigest(), 16) % 100
