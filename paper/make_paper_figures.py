@@ -130,9 +130,10 @@ def fig_routes():
     te = split(load_routes(1000, 0))[2]; te = [r for r in te if r.score == "High"]
     n = np.array([len(r.T) - 1 for r in te]); r = te[int(np.argmin(np.abs(n - np.median(n))))]
     panels = [("driver", "driver", "the driver's route"), (f"{LNS}:l=0", None, "plain LNS, $\\lambda=0$"), (f"{LNS}:l=60", None, "plain LNS, $\\lambda=60$"),
-              (f"zlns:order=ref:{ZL}:l=60", None, "zonal LNS (past-routes order), $\\lambda=60$")]
+              (f"zlns:order=ref:{ZL}:l=60", None, "zonal LNS (past routes), $\\lambda=60$"), (f"zsa:order=ref:{ZS}:l=60", None, "zonal SA (past routes), $\\lambda=60$"),
+              (f"zlns:order=ztsp:{ZL}:l=60", None, "zonal LNS (zone routing), $\\lambda=60$")]
     zid = {z: i for i, z in enumerate(sorted(set(r.zone[1:].tolist())))}; cmap = plt.get_cmap("tab20"); col = [cmap(zid[z] % 20) if i else (0, 0, 0, 1) for i, z in enumerate(r.zone)]
-    T = r.T; drv = T[np.arange(len(T) - 1), np.arange(1, len(T))].sum(); fig, axs = plt.subplots(2, 2, figsize=(6.6, 6.2))
+    T = r.T; drv = T[np.arange(len(T) - 1), np.arange(1, len(T))].sum(); fig, axs = plt.subplots(2, 3, figsize=(7.4, 4.9))
     for ax, (spec, _, title) in zip(axs.ravel(), panels):
         p = run_spec(spec, r, 0); assert sorted(p) == list(range(len(T))) and p[0] == 0
         jt = T[p[:-1], p[1:]].sum(); zc = int((r.zone[p[1:-1]] != r.zone[p[2:]]).sum())
@@ -141,7 +142,7 @@ def fig_routes():
         ax.scatter([xy[0, 1]], [xy[0, 0]], marker="*", s=130, c="k", zorder=3)               # first stop of the route
         pad = 0.04 * (r.xy[1:].max(0) - r.xy[1:].min(0)); lo, hi = r.xy[1:].min(0) - pad, r.xy[1:].max(0) + pad
         ax.set_xlim(lo[1], hi[1]); ax.set_ylim(lo[0], hi[0])
-        ax.set_title(f"{title}\n{jt:.0f} s ({100 * (jt / drv - 1):+.1f}% vs driver), {zc} zone changes", fontsize=8)
+        ax.set_title(f"{title}\n{100 * (jt / drv - 1):+.1f}% vs driver, {zc} zone changes", fontsize=7)
         ax.set_xticks([]); ax.set_yticks([]); ax.grid(False)
     fig.tight_layout(); fig.savefig(OUT / "fig_routes.pdf"); plt.close(fig); print("example route", r.rid, "stops", len(T) - 1, "zones", len(zid))
 
