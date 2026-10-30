@@ -1,0 +1,21 @@
+\begin{tabular}{lR{3.1cm}R{2.4cm}R{2.9cm}}
+\toprule
+Method & Travel time vs.\ driver (\%) & Zone changes & Official score \\
+\midrule
+\multicolumn{4}{l}{\textit{$\lambda=0$ (travel time only)}}\\
+OR-Tools (10 s) & $-10.96$ & $35.7$ & $0.0858$ \\
+plain LNS & $-13.91\pm0.01$ & $33.4\pm0.0$ & $0.0770\pm0.0001$ \\
+zonal LNS, order by zone routing & $-11.12\pm0.04$ & $29.4\pm0.0$ & $0.0655\pm0.0002$ \\
+zonal LNS, order from past routes & $-9.09\pm0.00$ & $29.1\pm0.0$ & $0.0499\pm0.0001$ \\
+zonal SA, order by zone routing & $-11.13\pm0.04$ & $29.7\pm0.1$ & $0.0664\pm0.0003$ \\
+zonal SA, order from past routes & $-9.13\pm0.00$ & $29.4\pm0.0$ & $0.0508\pm0.0001$ \\
+\midrule
+\multicolumn{4}{l}{\textit{$\lambda=60$ s (balanced)}}\\
+OR-Tools (10 s) & $-9.48$ & $21.2$ & $0.0594$ \\
+plain LNS & $-11.48\pm0.01$ & $20.4\pm0.0$ & $0.0531\pm0.0001$ \\
+zonal LNS, order by zone routing & $-9.21\pm0.03$ & $19.5\pm0.0$ & $0.0501\pm0.0002$ \\
+zonal LNS, order from past routes & $-7.22\pm0.01$ & $19.5\pm0.0$ & $0.0384\pm0.0001$ \\
+zonal SA, order by zone routing & $-9.35\pm0.02$ & $19.6\pm0.0$ & $0.0506\pm0.0003$ \\
+zonal SA, order from past routes & $-7.41\pm0.01$ & $19.6\pm0.0$ & $0.0391\pm0.0001$ \\
+\bottomrule
+\end{tabular}
